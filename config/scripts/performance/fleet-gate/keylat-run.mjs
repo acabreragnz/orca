@@ -642,6 +642,34 @@ async function measureKeys({ label, buildDir, seedDir, options, runDir, outDir }
       await sleep(1_000)
     }
     result.hookEndpointFresh = hookEndpointMtime(userDataDir) >= launchedAt
+    result.terminalsAdded = await page.evaluate(async () => {
+      const state = window.__store.getState()
+      const existing = Object.values(state.tabsByWorktree ?? {}).filter((tabs) => Array.isArray(tabs) && tabs.length > 0).length
+      if (existing >= 20) {
+        return { existing, created: 0 }
+      }
+      const list = await window.api.runtime.call({ method: 'worktree.list', params: { limit: 5000 } })
+      const worktrees = (list.result?.worktrees ?? [])
+        .filter((worktree) => /wt-\d{4}\/?$/.test(worktree.path))
+        .sort((a, b) => (a.path < b.path ? -1 : 1))
+        .slice(0, 40)
+      let created = 0
+      let firstError = null
+      for (const worktree of worktrees) {
+        const response = await window.api.runtime.call({
+          method: 'terminal.create',
+          params: { worktree: `id:${worktree.id}`, clientMutationId: crypto.randomUUID() }
+        })
+        if (response.ok) {
+          created += 1
+        } else if (!firstError) {
+          firstError = JSON.stringify(response.error ?? response).slice(0, 300)
+        }
+      }
+      return { existing, listed: worktrees.length, created, firstError, samplePath: list.result?.worktrees?.[0]?.path ?? null }
+    })
+    console.log(`[keylat] ${label} terminals ${JSON.stringify(result.terminalsAdded)}`)
+    await sleep(5_000)
     const agents = await seedAgentStatuses({ page, userDataDir, count: AGENT_PANES })
     result.agentStatuses = agents
     console.log(`[keylat] ${label} up; settling ${options.settleMs / 1000}s`)
