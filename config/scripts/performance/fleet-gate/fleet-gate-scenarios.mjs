@@ -284,6 +284,19 @@ function uncoveredCardPair(page) {
 }
 
 async function switchWorkspaces({ page, windowMs }) {
+  if (process.env.FLEET_GATE_KEYS) {
+    const cards = await page.evaluate((classic) => {
+      const s = window.__store.getState()
+      const before = { choice: s.worktreeCardsIntroChoice, seen: s.worktreeCardsIntroNoticeSeen, saved: s.settings?.experimentalNewWorktreeCardStyle }
+      if (classic) {
+        s.markWorktreeCardsIntroNoticeSeen?.()
+        s.setWorktreeCardsIntroChoice?.(null)
+      }
+      return before
+    }, Boolean(process.env.FLEET_GATE_CLASSIC))
+    console.log(`[fleet-gate-cards] classic=${Boolean(process.env.FLEET_GATE_CLASSIC)} before=${JSON.stringify(cards)}`)
+    await sleep(3000)
+  }
   await dismissOverlays(page)
   let pair = await uncoveredCardPair(page)
   if (pair.length < 2) {
@@ -335,6 +348,13 @@ async function switchWorkspaces({ page, windowMs }) {
         throw new Error(`card ${spot.path === 'covered' ? 'covered' : 'not on screen'}`)
       }
       // A raw pointer click at the hit-tested centre: locator.click's actionability waits cost ~2 s per click here.
+      if (process.env.FLEET_GATE_KEYS && switches < 2) {
+        const hit = await page.evaluate(([x, y]) => {
+          const el = document.elementFromPoint(x, y)
+          return el ? `${el.tagName}.${String(el.className).slice(0, 80)} role=${el.getAttribute('role')} row=${Boolean(el.closest('[data-agent-row],[data-pane-key]'))}` : null
+        }, [spot.x, spot.y])
+        console.log(`[fleet-gate-hit] ${hit}`)
+      }
       await page.mouse.click(spot.x, spot.y)
       mark = lap('click', mark)
       landed = await page

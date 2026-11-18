@@ -488,7 +488,13 @@ async function main() {
   const shas = { old: oldSha, new: newSha }
   if (process.env.FLEET_GATE_NEW_LIST) {
     const listRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'orca-fleet-gate-list-'))
-    for (const ref of process.env.FLEET_GATE_NEW_LIST.split(',').filter(Boolean)) {
+    for (const entry of process.env.FLEET_GATE_NEW_LIST.split(',').filter(Boolean)) {
+      const [ref, mode] = entry.split(':')
+      if (mode === 'classic') {
+        process.env.FLEET_GATE_CLASSIC = '1'
+      } else {
+        delete process.env.FLEET_GATE_CLASSIC
+      }
       try {
         const sha = resolveCommit(repoRoot, ref)
         const buildDir = ensureBuild(repoRoot, sha)
@@ -501,7 +507,7 @@ async function main() {
           outDir,
           runDir: path.join(listRoot, sha)
         })
-        console.log(`[fleet-gate-list] ${sha} ${JSON.stringify(run.windows?.switch?.metrics ?? run.windows?.switch ?? null).slice(0, 300)}`)
+        console.log(`[fleet-gate-list] ${sha}:${mode ?? 'default'} ${JSON.stringify(run.windows?.switch?.metrics ?? run.windows?.switch ?? null).slice(0, 300)}`)
       } catch (error) {
         console.log(`[fleet-gate-list] ${ref} failed: ${String(error?.message ?? error).slice(0, 300)}`)
       }
