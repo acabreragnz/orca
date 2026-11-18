@@ -145,6 +145,44 @@ describe('rebase Abort against real git', () => {
     expect(repo.git('diff', 'HEAD', '--binary')).toBe(before)
   })
 
+  const readRaw = (repoPath: string, file: string) => readFileSync(join(repoPath, file), 'utf8')
+
+  // The filter command is POSIX sed.
+  it.skipIf(process.platform === 'win32')(
+    'refuses when a clean filter would hide worktree bytes Abort rewrites',
+    async () => {
+      const repo = pausedRebase({
+        'filter.strip.clean': "sed '/LOCAL/d'",
+        'filter.strip.smudge': 'cat'
+      })
+      repo.write('.git/info/attributes', 'c.txt filter=strip\n')
+      repo.write('c.txt', 'main c\nLOCAL note\n')
+      await expectRefused(repo, { kind: 'unverifiable' })
+      expect(readRaw(repo.repoPath, 'c.txt')).toBe('main c\nLOCAL note\n')
+    }
+  )
+
+  it('refuses when line-ending conversion is configured', async () => {
+    const repo = pausedRebase({ 'core.autocrlf': 'input' })
+    await expectRefused(repo, { kind: 'unverifiable' })
+  })
+
+  it('refuses when an assume-unchanged pick file hides a worktree edit', async () => {
+    const repo = pausedRebase()
+    repo.git('update-index', '--assume-unchanged', 'd.txt')
+    appendFileSync(join(repo.repoPath, 'd.txt'), 'my own line\n')
+    await expectRefused(repo, { kind: 'unverifiable' })
+    expect(readRaw(repo.repoPath, 'd.txt')).toBe('pick d\nmy own line\n')
+  })
+
+  it('refuses when a skip-worktree file hides a worktree edit', async () => {
+    const repo = pausedRebase()
+    repo.git('update-index', '--skip-worktree', 'c.txt')
+    repo.write('c.txt', 'my own c\n')
+    await expectRefused(repo, { kind: 'unverifiable' })
+    expect(readRaw(repo.repoPath, 'c.txt')).toBe('my own c\n')
+  })
+
   it('refuses when it cannot read the stopped pick', async () => {
     const repo = pausedRebase()
     unlinkSync(join(repo.repoPath, '.git', 'REBASE_HEAD'))

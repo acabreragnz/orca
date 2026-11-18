@@ -10,6 +10,11 @@ import { gitExecFileAsync } from '../../command-runner/git-exec-file'
 import { resolveGitDir } from '../resolve-git-dir'
 import { forgetOrcaRebaseProvenance } from './orca-rebase-provenance'
 import {
+  assertNoByteConversions,
+  assertStatusSeesWorktree,
+  readAbortRewritePaths
+} from './rebase-abort-byte-guards'
+import {
   conflictIsPristine,
   readConflictLabels,
   readMergeAttributes,
@@ -27,8 +32,9 @@ const REGULAR_MODES = new Set(['100644', '100755'])
  * Abort may only undo the rebase. It is safe when every changed tracked path is byte-for-byte what
  * Git itself produced at this stop: a cleanly applied pick file (index = picked blob, HEAD = its
  * parent's blob, worktree = index), or a conflicted file whose worktree equals Git's conflict
- * output regenerated from the index stages. Anything else is an edit Abort would lose; anything
- * this cannot reproduce (drivers, encodings, submodules, symlinks, the apply backend) is refused.
+ * output regenerated from the index stages, compared as raw bytes. Anything else is an edit Abort
+ * would lose. Anything this cannot prove (byte conversions, index flags that hide worktree edits,
+ * drivers, submodules, symlinks, the apply backend) is refused.
  */
 export async function checkRebaseAbortSafety(
   worktreePath: string,
@@ -40,15 +46,31 @@ export async function checkRebaseAbortSafety(
   }
   const git = { ...gitOptionsForWorktree(worktreePath, options), env }
   try {
+    await assertStatusSeesWorktree(git)
     const { stdout } = await gitExecFileAsync(
-      ['--no-optional-locks', 'status', '--porcelain=v2', '-z', '--no-renames', '-uno'],
+      [
+        '-c',
+        'core.fsmonitor=false',
+        '--no-optional-locks',
+        'status',
+        '--porcelain=v2',
+        '-z',
+        '--no-renames',
+        '-uno'
+      ],
       git
     )
     const entries = parseStatus(stdout)
+    const gitDir = await resolveGitDir(worktreePath, options)
+    // Status compares converted bytes, so conversions anywhere Abort writes would hide edits.
+    await assertNoByteConversions(
+      [...entries.map((entry) => entry.path), ...(await readAbortRewritePaths(gitDir, git))],
+      git
+    )
     if (entries.length === 0) {
       return { kind: 'pristine' }
     }
-    const edits = await findEdits(worktreePath, entries, git, options)
+    const edits = await findEdits(gitDir, entries, git)
     return edits.length > 0 ? { kind: 'edits', files: edits.sort() } : { kind: 'pristine' }
   } catch {
     return { kind: 'unverifiable' }
@@ -117,10 +139,9 @@ function splitFields(record: string, count: number): string[] {
 }
 
 async function findEdits(
-  worktreePath: string,
+  gitDir: string,
   entries: StatusEntry[],
-  git: GitExecOptions,
-  options: GitRuntimeOptions
+  git: GitExecOptions
 ): Promise<string[]> {
   for (const entry of entries) {
     if (
@@ -130,7 +151,6 @@ async function findEdits(
       throw new Unverifiable(entry.path)
     }
   }
-  const gitDir = await resolveGitDir(worktreePath, options)
   // A strategy or its options change Git's merge output in ways this does not reproduce.
   for (const file of ['rebase-merge/strategy', 'rebase-merge/strategy_opts']) {
     if (await exists(path.join(gitDir, file))) {

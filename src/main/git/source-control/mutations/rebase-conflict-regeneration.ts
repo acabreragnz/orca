@@ -72,7 +72,7 @@ export async function conflictIsPristine(
     return modeWorktree === ZERO_MODE ? false : unverifiable(entry.path)
   }
   const worktree = (
-    await gitExecFileAsync(['hash-object', `--path=${entry.path}`, '--', entry.path], git)
+    await gitExecFileAsync(['hash-object', '--no-filters', '--', entry.path], git)
   ).stdout.trim()
   if (modeBase !== ZERO_MODE && (modeOurs === ZERO_MODE) !== (modeTheirs === ZERO_MODE)) {
     // Modify/delete: Git leaves the surviving side as it was.
