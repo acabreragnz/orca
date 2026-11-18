@@ -724,7 +724,7 @@ async function measureKeys({ label, buildDir, seedDir, options, runDir, outDir }
     }
     const switches = []
     const worktreeId = await page.evaluate(() => window.__store.getState().activeWorktreeId)
-    const terminalTabId = await page.evaluate(() => window.__store.getState().getActiveTab?.()?.id ?? null)
+    const terminalTabId = await page.evaluate(() => { const s = window.__store.getState(); return s.getActiveTab?.(s.activeWorktreeId)?.id ?? null })
     const refocusTerminal = async () => {
       await page.evaluate(() => {
         document.querySelectorAll('[data-keylat-input]').forEach((el) => el.removeAttribute('data-keylat-input'))
