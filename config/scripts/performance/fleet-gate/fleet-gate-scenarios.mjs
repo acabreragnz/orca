@@ -304,10 +304,28 @@ async function switchWorkspaces({ page, windowMs }) {
   }
   if (process.env.FLEET_GATE_KEYS) {
     await page.evaluate(() => {
-      const log = (globalThis.__fgKeys = { pubs: 0, keys: {}, stacks: {} })
+      const log = (globalThis.__fgKeys = { pubs: 0, keys: {}, stacks: {}, actions: {} })
+      const actionStack = []
+      const wrapped = {}
+      for (const [name, value] of Object.entries(window.__store.getState())) {
+        if (typeof value === 'function' && !name.startsWith('get') && !name.startsWith('select')) {
+          wrapped[name] = function (...args) {
+            actionStack.push(name)
+            try {
+              return value.apply(this, args)
+            } finally {
+              actionStack.pop()
+            }
+          }
+        }
+      }
+      window.__store.setState(wrapped)
       window.__store.subscribe((next, prev) => {
+        const changedKeys = Object.keys(next).filter((k) => typeof next[k] !== 'function' && !Object.is(next[k], prev[k]))
+        const actionKey = `${actionStack.join('>') || '(direct)'} => ${changedKeys.sort().join(',') || '(none)'}`
+        log.actions[actionKey] = (log.actions[actionKey] ?? 0) + 1
         log.pubs += 1
-        const changed = Object.keys(next).filter((k) => !Object.is(next[k], prev[k]))
+        const changed = Object.keys(next).filter((k) => typeof next[k] !== 'function' && !Object.is(next[k], prev[k]))
         const sig = changed.length ? changed.sort().join(',') : '(none)'
         log.keys[sig] = (log.keys[sig] ?? 0) + 1
         const stack = (new Error().stack ?? '').split('\n').slice(2, 14).map((l) => l.trim().replace(/\(?(file|https?):\/\/[^)]*\/(assets|out)\//, '(')).join(' | ')
