@@ -13895,13 +13895,11 @@
             "noRebaseInProgress": "Aucun rebase en cours",
             "rebaseStopMovedOn": "Le rebase a déjà avancé. Vérifiez le panneau et réessayez.",
             "rebaseEmptyStep": "Rien à commiter à cette étape. Annulez le rebase ou terminez-le dans un terminal.",
-            "abortRebaseDiscardTitle_one": "Annuler le rebase et abandonner les modifications de {{count}} fichier ?",
-            "abortRebaseDiscardTitle_many": "Annuler le rebase et abandonner les modifications de {{count}} fichiers ?",
-            "abortRebaseDiscardTitle_other": "Annuler le rebase et abandonner les modifications de {{count}} fichiers ?",
             "abortRebaseDiscardFilesMore": "{{files}} et {{count}} de plus",
-            "abortRebaseDiscardConfirm": "Abandonner et annuler",
-            "abortRebaseOtherEditsFirst": "Validez ou remisez d'abord vos autres modifications.",
-            "abortRebaseEditsUnchecked": "Impossible de vérifier vos modifications : le rebase n'a pas été annulé."
+            "abortRebaseWouldDiscardEdits_one": "Annuler supprimerait vos modifications de {{count}} fichier. Annulez-les ou terminez avec Continuer.",
+            "abortRebaseWouldDiscardEdits_many": "Annuler supprimerait vos modifications de {{count}} fichiers. Annulez-les ou terminez avec Continuer.",
+            "abortRebaseWouldDiscardEdits_other": "Annuler supprimerait vos modifications de {{count}} fichiers. Annulez-les ou terminez avec Continuer.",
+            "abortRebaseCantVerify": "Impossible de confirmer que l'annulation est sûre ici. Terminez avec Continuer ou annulez dans un terminal."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Impossible de démarrer l'agent sélectionné.",

@@ -15,13 +15,12 @@ export function createWebGitRebaseApi(): Pick<
         worktree: toRuntimeWorktreeSelector(worktree.id)
       })
     },
-    continueRebase: async ({ worktreePath, action, expected, expectedDiscards }) => {
+    continueRebase: async ({ worktreePath, action, expected }) => {
       const worktree = await resolveRuntimeWorktreeByPath(worktreePath)
       return callRuntimeResult<ContinueRebaseResult>('git.continueRebase', {
         worktree: toRuntimeWorktreeSelector(worktree.id),
         action,
-        ...(expected ? { expected } : {}),
-        ...(expectedDiscards ? { expectedDiscards } : {})
+        ...(expected ? { expected } : {})
       })
     },
     rebaseAutoStash: async ({ worktreePath }) => {

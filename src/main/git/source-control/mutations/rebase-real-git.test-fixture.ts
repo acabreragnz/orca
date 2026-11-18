@@ -20,6 +20,8 @@ export function createConflictingRebaseRepo(tempPaths: string[]) {
   git('config', 'user.email', 'orca@example.test')
   git('config', 'commit.gpgSign', 'false')
   git('config', 'core.hooksPath', '.git/no-hooks')
+  // Local, so Git and the code under test agree whatever the machine's global config says.
+  git('config', 'merge.conflictStyle', 'merge')
   write('a.txt', 'base\n')
   write('b.txt', 'base\n')
   write('c.txt', 'base\n')

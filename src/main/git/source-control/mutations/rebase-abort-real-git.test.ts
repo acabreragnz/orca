@@ -1,7 +1,7 @@
-import { rmSync, unlinkSync } from 'node:fs'
+import { appendFileSync, readFileSync, rmSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { detectConflictOperation } from './git-conflict-operation'
+import { abortRebase, detectConflictOperation } from './git-conflict-operation'
 import { continueRebase } from './rebase-continue'
 import { createConflictingRebaseRepo } from './rebase-real-git.test-fixture'
 
@@ -14,107 +14,150 @@ describe('rebase Abort against real git', () => {
     }
   })
 
-  /** Paused on the first pick, which only touches a.txt; c.txt is not the pick's. */
-  function pausedRebase() {
+  /** Paused on a pick that conflicts in a.txt and cleanly adds d.txt; c.txt is only main's. */
+  function pausedRebase(config: Record<string, string> = {}) {
     const repo = createConflictingRebaseRepo(tempPaths)
-    expect(() => repo.git('rebase', 'main')).toThrow()
-    return repo
+    const { git, write } = repo
+    for (const [key, value] of Object.entries(config)) {
+      git('config', key, value)
+    }
+    git('checkout', '--quiet', '-b', 'pick', 'main~1')
+    write('a.txt', 'pick a\n')
+    write('d.txt', 'pick d\n')
+    git('add', 'a.txt', 'd.txt')
+    git('commit', '--quiet', '-m', 'pick a and d')
+    expect(() => git('rebase', 'main')).toThrow()
+    const snapshot = () =>
+      git('diff', 'HEAD', '--binary') +
+      git('diff', '--cached', '--binary') +
+      readFileSync(join(repo.repoPath, 'a.txt'), 'utf8')
+    return { ...repo, snapshot }
   }
 
-  async function expectRefusedKeeping(repoPath: string, git: (...args: string[]) => string) {
-    const before = git('diff', 'HEAD', '--binary') + git('diff', '--cached', '--binary')
-    const inspected = await continueRebase(repoPath, 'inspect')
-    await expect(
-      continueRebase(repoPath, 'abort', {
-        expected: inspected.stop,
-        expectedDiscards: inspected.abortWouldDiscard
+  async function abortAtCurrentStop(repoPath: string) {
+    const { stop } = await continueRebase(repoPath, 'inspect')
+    return continueRebase(repoPath, 'abort', { expected: stop })
+  }
+
+  async function expectRefused(
+    repo: ReturnType<typeof pausedRebase>,
+    abortSafety: unknown
+  ): Promise<void> {
+    const before = repo.snapshot()
+    await expect(continueRebase(repo.repoPath, 'inspect')).resolves.toMatchObject({ abortSafety })
+    await expect(abortAtCurrentStop(repo.repoPath)).resolves.toMatchObject({
+      outcome: 'abort_blocked',
+      abortSafety
+    })
+    await expect(abortRebase(repo.repoPath)).rejects.toThrow()
+    await expect(detectConflictOperation(repo.repoPath)).resolves.toBe('rebase')
+    expect(repo.snapshot()).toBe(before)
+  }
+
+  it.each(['merge', 'zdiff3'])(
+    'aborts a pristine conflict (%s style) with a cleanly applied pick file',
+    async (style) => {
+      const { repoPath, git } = pausedRebase({ 'merge.conflictStyle': style })
+      await expect(continueRebase(repoPath, 'inspect')).resolves.toMatchObject({
+        abortSafety: { kind: 'pristine' }
       })
-    ).resolves.toMatchObject({ outcome: 'abort_blocked' })
-    await expect(detectConflictOperation(repoPath)).resolves.toBe('rebase')
-    expect(git('diff', 'HEAD', '--binary') + git('diff', '--cached', '--binary')).toBe(before)
-    return inspected
-  }
-
-  it('refuses for a staged-only edit outside the pick', async () => {
-    const { repoPath, git, write } = pausedRebase()
-    write('c.txt', 'staged c\n')
-    git('add', 'c.txt')
-    const inspected = await expectRefusedKeeping(repoPath, git)
-    expect(inspected.abortBlockedBy).toEqual(['c.txt'])
-  })
-
-  it('refuses for an unstaged-only edit outside the pick', async () => {
-    const { repoPath, git, write } = pausedRebase()
-    write('c.txt', 'unstaged c\n')
-    const inspected = await expectRefusedKeeping(repoPath, git)
-    expect(inspected.abortBlockedBy).toEqual(['c.txt'])
-  })
-
-  it('refuses for a staged edit an unstaged edit cancels out', async () => {
-    const { repoPath, git, write } = pausedRebase()
-    write('c.txt', 'staged c\n')
-    git('add', 'c.txt')
-    write('c.txt', 'main c\n')
-    const inspected = await expectRefusedKeeping(repoPath, git)
-    expect(inspected.abortBlockedBy).toEqual(['c.txt'])
-  })
-
-  // Windows forbids these characters in file names.
-  it.skipIf(process.platform === 'win32')(
-    'refuses for pathspec-like file names, naming them exactly',
-    async () => {
-      const { repoPath, git, write } = pausedRebase()
-      write(':(top)x', 'new\n')
-      write('*', 'new\n')
-      git('add', '--', ':(literal):(top)x', ':(literal)*')
-      const inspected = await expectRefusedKeeping(repoPath, git)
-      expect(inspected.abortBlockedBy).toEqual(['*', ':(top)x'])
+      await expect(abortAtCurrentStop(repoPath)).resolves.toEqual({ outcome: 'aborted' })
+      expect(git('rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe('pick')
     }
   )
 
-  it('refuses when it cannot read the stopped pick', async () => {
-    const { repoPath, git, write } = pausedRebase()
-    write('a.txt', 'resolved a\n')
-    unlinkSync(join(repoPath, '.git', 'REBASE_HEAD'))
-    const inspected = await expectRefusedKeeping(repoPath, git)
-    expect(inspected.abortWouldDiscard).toBeUndefined()
-  })
-
-  it("confirms the pick's own edits, re-asks when they changed, then aborts", async () => {
-    const { repoPath, git, write } = pausedRebase()
-    write('a.txt', 'resolved a\n')
-    git('add', 'a.txt')
-    const inspected = await continueRebase(repoPath, 'inspect')
-    expect(inspected).toMatchObject({ abortWouldDiscard: ['a.txt'], abortBlockedBy: [] })
-
-    await expect(
-      continueRebase(repoPath, 'abort', { expected: inspected.stop, expectedDiscards: [] })
-    ).resolves.toMatchObject({ outcome: 'abort_changed', abortWouldDiscard: ['a.txt'] })
-    await expect(detectConflictOperation(repoPath)).resolves.toBe('rebase')
-
-    await expect(
-      continueRebase(repoPath, 'abort', { expected: inspected.stop, expectedDiscards: ['a.txt'] })
-    ).resolves.toEqual({ outcome: 'aborted' })
+  it('aborts a pristine conflict through the older abort entry point', async () => {
+    const { repoPath } = pausedRebase()
+    await abortRebase(repoPath)
     await expect(detectConflictOperation(repoPath)).resolves.toBe('unknown')
   })
 
-  it('aborts a modify/delete conflict without touching anything outside the pick', async () => {
+  it('refuses a tail edit in a conflicted pick file', async () => {
+    const repo = pausedRebase()
+    appendFileSync(join(repo.repoPath, 'a.txt'), 'my own line\n')
+    await expectRefused(repo, { kind: 'edits', files: ['a.txt'] })
+  })
+
+  it('refuses a resolved pick file, staged, with a worktree tail edit on top', async () => {
+    const repo = pausedRebase()
+    repo.write('a.txt', 'resolved a\n')
+    repo.git('add', 'a.txt')
+    appendFileSync(join(repo.repoPath, 'a.txt'), 'my own line\n')
+    await expectRefused(repo, { kind: 'edits', files: ['a.txt'] })
+  })
+
+  it('refuses a staged tail edit in a cleanly applied pick file', async () => {
+    const repo = pausedRebase()
+    appendFileSync(join(repo.repoPath, 'd.txt'), 'my own line\n')
+    repo.git('add', 'd.txt')
+    await expectRefused(repo, { kind: 'edits', files: ['d.txt'] })
+  })
+
+  it('refuses an unrelated edit, staged, unstaged or cancelled out', async () => {
+    const repo = pausedRebase()
+    repo.write('c.txt', 'staged c\n')
+    repo.git('add', 'c.txt')
+    repo.write('c.txt', 'main c\n')
+    await expectRefused(repo, { kind: 'edits', files: ['c.txt'] })
+  })
+
+  // Windows forbids these characters in file names.
+  it.skipIf(process.platform === 'win32')('names pathspec-like files exactly', async () => {
+    const repo = pausedRebase()
+    repo.write(':(top)x', 'new\n')
+    repo.write('*', 'new\n')
+    repo.git('add', '--', ':(literal):(top)x', ':(literal)*')
+    await expectRefused(repo, { kind: 'edits', files: ['*', ':(top)x'] })
+  })
+
+  it('aborts a pristine modify/delete conflict', async () => {
     const { repoPath, git, write } = createConflictingRebaseRepo(tempPaths)
     git('checkout', '--quiet', '-b', 'remove-a', 'main~1')
     git('rm', '--quiet', 'a.txt')
     git('commit', '--quiet', '-m', 'remove a')
     expect(() => git('rebase', 'main')).toThrow()
     write('untracked.txt', 'kept\n')
-    const inspected = await continueRebase(repoPath, 'inspect')
-    expect(inspected).toMatchObject({ abortWouldDiscard: ['a.txt'], abortBlockedBy: [] })
+    await expect(abortAtCurrentStop(repoPath)).resolves.toEqual({ outcome: 'aborted' })
+    expect(git('status', '--porcelain')).toBe('?? untracked.txt\n')
+  })
 
+  it('refuses a resolution rerere replayed', async () => {
+    const repo = pausedRebase({ 'rerere.enabled': 'true' })
+    repo.write('a.txt', 'resolved a\n')
+    repo.git('add', 'a.txt')
+    repo.git('rebase', '--continue')
+    repo.git('reset', '--quiet', '--hard', 'ORIG_HEAD')
+    expect(() => repo.git('rebase', 'main')).toThrow()
+    expect(readFileSync(join(repo.repoPath, 'a.txt'), 'utf8')).toBe('resolved a\n')
+    await expectRefused(repo, { kind: 'edits', files: ['a.txt'] })
+  })
+
+  it('refuses when a custom merge driver produced the conflict', async () => {
+    const repo = createConflictingRebaseRepo(tempPaths)
+    repo.write('.git/info/attributes', 'a.txt merge=custom\n')
+    repo.git('config', 'merge.custom.driver', 'false')
+    expect(() => repo.git('rebase', 'main')).toThrow()
+    const before = repo.git('diff', 'HEAD', '--binary')
+    await expect(abortAtCurrentStop(repo.repoPath)).resolves.toMatchObject({
+      outcome: 'abort_blocked',
+      abortSafety: { kind: 'unverifiable' }
+    })
+    expect(repo.git('diff', 'HEAD', '--binary')).toBe(before)
+  })
+
+  it('refuses when it cannot read the stopped pick', async () => {
+    const repo = pausedRebase()
+    unlinkSync(join(repo.repoPath, '.git', 'REBASE_HEAD'))
+    await expectRefused(repo, { kind: 'unverifiable' })
+  })
+
+  it('re-asks instead of aborting a stop the user was not shown', async () => {
+    const { repoPath } = pausedRebase()
     await expect(
       continueRebase(repoPath, 'abort', {
-        expected: inspected.stop,
-        expectedDiscards: inspected.abortWouldDiscard
+        expected: { head: 'other', step: '1', incarnation: 'other' }
       })
-    ).resolves.toEqual({ outcome: 'aborted' })
-    expect(git('status', '--porcelain')).toBe('?? untracked.txt\n')
-    expect(git('rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe('remove-a')
+    ).resolves.toMatchObject({ outcome: 'abort_changed', abortSafety: { kind: 'pristine' } })
+    await expect(detectConflictOperation(repoPath)).resolves.toBe('rebase')
   })
 })

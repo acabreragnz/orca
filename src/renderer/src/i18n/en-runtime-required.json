@@ -422,8 +422,8 @@
             "resultCount_other": "{{count}} results"
           },
           "SourceControl": {
-            "abortRebaseDiscardTitle_one": "Abort rebase and discard edits to {{count}} file?",
-            "abortRebaseDiscardTitle_other": "Abort rebase and discard edits to {{count}} files?",
+            "abortRebaseWouldDiscardEdits_one": "Abort would discard your edits to {{count}} file. Undo them or finish with Continue.",
+            "abortRebaseWouldDiscardEdits_other": "Abort would discard your edits to {{count}} files. Undo them or finish with Continue.",
             "branchFilesChangedVsBase_one": "{{count}} file changed vs {{ref}}",
             "branchFilesChangedVsBase_other": "{{count}} files changed vs {{ref}}",
             "clearNotesFromFile_one": "Clear {{count}} note from {{path}}?",

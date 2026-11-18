@@ -47,13 +47,20 @@ export type ContinueRebaseOutcome =
   | 'aborted'
   // The stop or the set of paths Abort would reset changed since the user confirmed; nothing ran.
   | 'abort_changed'
-  // Abort would discard tracked edits outside the stopped pick (or could not tell); nothing ran.
+  // Abort would discard the user's edits, or could not prove it would not; nothing ran.
   | 'abort_blocked'
-/** expected binds continue/abort to a stop; expectedDiscards binds abort to a path set. */
+/** expected binds continue/abort to the stop the user was shown. */
 export type ContinueRebaseRequest = {
   expected?: RebaseStopToken
-  expectedDiscards?: string[]
 }
+/**
+ * pristine: every changed tracked file is exactly what Git produced at this stop, so Abort loses
+ * nothing of the user's. edits: these files hold the user's own changes. unverifiable: can't tell.
+ */
+export type RebaseAbortSafety =
+  | { kind: 'pristine' }
+  | { kind: 'edits'; files: string[] }
+  | { kind: 'unverifiable' }
 export type ContinueRebaseResult = {
   outcome: ContinueRebaseOutcome
   // Git's own output, kept for diagnostics.
@@ -64,10 +71,8 @@ export type ContinueRebaseResult = {
   branch?: string | null
   // Set when this Continue finished a rebase Orca started over an integrated upstream tip.
   integratedUpstreamOid?: string
-  // inspect/abort_*: changed tracked paths the stopped pick owns; absent when Git could not say.
-  abortWouldDiscard?: string[]
-  // inspect/abort_*: changed tracked paths outside the stopped pick, which block Abort.
-  abortBlockedBy?: string[]
+  // inspect/abort_*: whether Abort would lose anything of the user's.
+  abortSafety?: RebaseAbortSafety
 }
 export type GitSubmoduleStatus = {
   commitChanged: boolean

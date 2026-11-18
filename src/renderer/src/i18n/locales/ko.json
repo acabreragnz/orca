@@ -13298,11 +13298,9 @@
             "noRebaseInProgress": "진행 중인 리베이스가 없습니다",
             "rebaseStopMovedOn": "리베이스가 이미 다음 단계로 진행되었습니다. 패널을 확인하고 다시 시도하세요.",
             "rebaseEmptyStep": "이 단계에는 커밋할 내용이 없습니다. 리베이스를 중단하거나 터미널에서 마무리하세요.",
-            "abortRebaseDiscardTitle_other": "리베이스를 중단하고 파일 {{count}}개의 편집 내용을 폐기할까요?",
             "abortRebaseDiscardFilesMore": "{{files}} 외 {{count}}개",
-            "abortRebaseDiscardConfirm": "폐기하고 중단",
-            "abortRebaseOtherEditsFirst": "먼저 다른 편집 내용을 커밋하거나 스태시하세요.",
-            "abortRebaseEditsUnchecked": "편집 내용을 확인할 수 없어 리베이스를 중단하지 않았습니다."
+            "abortRebaseWouldDiscardEdits_other": "중단하면 파일 {{count}}개의 편집 내용이 삭제됩니다. 편집을 되돌리거나 계속으로 완료하세요.",
+            "abortRebaseCantVerify": "여기서 중단해도 안전한지 확인할 수 없습니다. 계속으로 완료하거나 터미널에서 중단하세요."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "선택한 agent를 시작할 수 없습니다.",

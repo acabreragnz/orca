@@ -85,8 +85,7 @@ export const GIT_METHODS = [
     params: GitContinueRebase,
     handler: async (params, { runtime }) =>
       runtime.continueRuntimeGitRebase(params.worktree, params.action, {
-        expected: params.expected,
-        expectedDiscards: params.expectedDiscards
+        expected: params.expected
       })
   }),
   defineMethod({

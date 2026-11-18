@@ -14132,11 +14132,9 @@
             "noRebaseInProgress": "没有正在进行的变基",
             "rebaseStopMovedOn": "变基已经继续进行。请查看面板后重试。",
             "rebaseEmptyStep": "此步骤没有可提交的内容。请中止变基，或在终端中完成它。",
-            "abortRebaseDiscardTitle_other": "中止变基并丢弃对 {{count}} 个文件的修改？",
             "abortRebaseDiscardFilesMore": "{{files}} 等另外 {{count}} 个",
-            "abortRebaseDiscardConfirm": "丢弃并中止",
-            "abortRebaseOtherEditsFirst": "请先提交或储藏你的其他编辑。",
-            "abortRebaseEditsUnchecked": "无法检查你的编辑，因此未中止变基。"
+            "abortRebaseWouldDiscardEdits_other": "中止会丢弃你对 {{count}} 个文件的编辑。请撤销这些编辑，或用“继续”完成。",
+            "abortRebaseCantVerify": "无法确认此处中止是否安全。请用“继续”完成，或在终端中中止。"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "无法启动选定的代理",

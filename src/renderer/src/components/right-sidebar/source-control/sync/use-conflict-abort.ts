@@ -41,8 +41,7 @@ async function abortConfirmedRebase(
     confirm,
     refuse: showRebaseAbortRefused,
     beginAbort,
-    abort: (expected, expectedDiscards) =>
-      continueRuntimeGitRebase(context, 'abort', { expected, expectedDiscards })
+    abort: (expected) => continueRuntimeGitRebase(context, 'abort', { expected })
   })
   if (result !== 'cancelled' && result !== 'refused' && result.outcome === 'failed') {
     throw new Error(result.message)

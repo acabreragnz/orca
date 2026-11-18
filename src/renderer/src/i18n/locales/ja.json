@@ -14079,11 +14079,9 @@
             "noRebaseInProgress": "進行中のリベースはありません",
             "rebaseStopMovedOn": "リベースはすでに先へ進んでいます。パネルを確認してもう一度お試しください。",
             "rebaseEmptyStep": "このステップにはコミットする内容がありません。リベースを中止するか、ターミナルで完了してください。",
-            "abortRebaseDiscardTitle_other": "リベースを中止して {{count}} 個のファイルの編集を破棄しますか？",
             "abortRebaseDiscardFilesMore": "{{files}} ほか {{count}} 件",
-            "abortRebaseDiscardConfirm": "破棄して中止",
-            "abortRebaseOtherEditsFirst": "先にほかの編集をコミットするかスタッシュしてください。",
-            "abortRebaseEditsUnchecked": "編集内容を確認できなかったため、リベースは中止されませんでした。"
+            "abortRebaseWouldDiscardEdits_other": "中止すると {{count}} 件のファイルへの編集が破棄されます。編集を元に戻すか、「続行」で完了してください。",
+            "abortRebaseCantVerify": "ここで中止しても安全か確認できません。「続行」で完了するか、ターミナルで中止してください。"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "選択した Agent を開始できませんでした。",

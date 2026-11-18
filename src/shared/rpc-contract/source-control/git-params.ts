@@ -262,9 +262,7 @@ export const GitContinueRebase = WorktreeSelector.extend({
       step: z.string().nullable(),
       incarnation: z.string().nullable()
     })
-    .optional(),
-  // abort only: the paths the user agreed to discard.
-  expectedDiscards: z.array(z.string()).optional()
+    .optional()
 })
 
 export const GitRebaseFromBase = WorktreeSelector.extend({

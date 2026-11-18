@@ -14365,14 +14365,12 @@
             "noRebaseInProgress": "Rebase не выполняется",
             "rebaseStopMovedOn": "Rebase уже продвинулся дальше. Проверьте панель и повторите попытку.",
             "rebaseEmptyStep": "На этом шаге нечего коммитить. Прервите rebase или завершите его в терминале.",
-            "abortRebaseDiscardTitle_one": "Прервать rebase и отменить изменения в {{count}} файле?",
-            "abortRebaseDiscardTitle_few": "Прервать rebase и отменить изменения в {{count}} файлах?",
-            "abortRebaseDiscardTitle_many": "Прервать rebase и отменить изменения в {{count}} файлах?",
-            "abortRebaseDiscardTitle_other": "Прервать rebase и отменить изменения в {{count}} файла?",
             "abortRebaseDiscardFilesMore": "{{files}} и ещё {{count}}",
-            "abortRebaseDiscardConfirm": "Отменить изменения и прервать",
-            "abortRebaseOtherEditsFirst": "Сначала закоммитьте или спрячьте в stash другие изменения.",
-            "abortRebaseEditsUnchecked": "Не удалось проверить ваши изменения, поэтому перебазирование не прервано."
+            "abortRebaseWouldDiscardEdits_one": "Прерывание удалит ваши изменения в файлах ({{count}}). Отмените их или завершите через «Продолжить».",
+            "abortRebaseWouldDiscardEdits_few": "Прерывание удалит ваши изменения в файлах ({{count}}). Отмените их или завершите через «Продолжить».",
+            "abortRebaseWouldDiscardEdits_many": "Прерывание удалит ваши изменения в файлах ({{count}}). Отмените их или завершите через «Продолжить».",
+            "abortRebaseWouldDiscardEdits_other": "Прерывание удалит ваши изменения в файлах ({{count}}). Отмените их или завершите через «Продолжить».",
+            "abortRebaseCantVerify": "Не удаётся подтвердить, что прерывание здесь безопасно. Завершите через «Продолжить» или прервите в терминале."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Не удалось запустить выбранного агента.",

@@ -13624,13 +13624,11 @@
             "noRebaseInProgress": "No hay ningún rebase en curso",
             "rebaseStopMovedOn": "El rebase ya avanzó. Revisa el panel e inténtalo de nuevo.",
             "rebaseEmptyStep": "No hay nada que confirmar en este paso. Aborta el rebase o termínalo en una terminal.",
-            "abortRebaseDiscardTitle_one": "¿Abortar el rebase y descartar los cambios en {{count}} archivo?",
-            "abortRebaseDiscardTitle_many": "¿Abortar el rebase y descartar los cambios en {{count}} archivos?",
-            "abortRebaseDiscardTitle_other": "¿Abortar el rebase y descartar los cambios en {{count}} archivos?",
             "abortRebaseDiscardFilesMore": "{{files}} y {{count}} más",
-            "abortRebaseDiscardConfirm": "Descartar y abortar",
-            "abortRebaseOtherEditsFirst": "Primero confirma o guarda en stash tus otras ediciones.",
-            "abortRebaseEditsUnchecked": "No se pudieron comprobar tus ediciones, así que el rebase no se abortó."
+            "abortRebaseWouldDiscardEdits_one": "Abortar descartaría tus ediciones en {{count}} archivo. Deshazlas o termina con Continuar.",
+            "abortRebaseWouldDiscardEdits_many": "Abortar descartaría tus ediciones en {{count}} archivos. Deshazlas o termina con Continuar.",
+            "abortRebaseWouldDiscardEdits_other": "Abortar descartaría tus ediciones en {{count}} archivos. Deshazlas o termina con Continuar.",
+            "abortRebaseCantVerify": "No se puede confirmar que abortar sea seguro aquí. Termina con Continuar o aborta en una terminal."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "No se pudo iniciar el agente seleccionado.",

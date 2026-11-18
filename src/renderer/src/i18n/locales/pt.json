@@ -10326,13 +10326,11 @@
             "noRebaseInProgress": "Nenhum rebase em andamento",
             "rebaseStopMovedOn": "O rebase já avançou. Verifique o painel e tente novamente.",
             "rebaseEmptyStep": "Nada para fazer commit nesta etapa. Aborte o rebase ou conclua-o em um terminal.",
-            "abortRebaseDiscardTitle_one": "Abortar o rebase e descartar as edições em {{count}} arquivo?",
-            "abortRebaseDiscardTitle_many": "Abortar o rebase e descartar as edições em {{count}} arquivos?",
-            "abortRebaseDiscardTitle_other": "Abortar o rebase e descartar as edições em {{count}} arquivos?",
             "abortRebaseDiscardFilesMore": "{{files}} e mais {{count}}",
-            "abortRebaseDiscardConfirm": "Descartar e abortar",
-            "abortRebaseOtherEditsFirst": "Primeiro faça commit ou stash das suas outras edições.",
-            "abortRebaseEditsUnchecked": "Não foi possível verificar suas edições, então o rebase não foi abortado."
+            "abortRebaseWouldDiscardEdits_one": "Abortar descartaria suas edições em {{count}} arquivo. Desfaça-as ou conclua com Continuar.",
+            "abortRebaseWouldDiscardEdits_many": "Abortar descartaria suas edições em {{count}} arquivos. Desfaça-as ou conclua com Continuar.",
+            "abortRebaseWouldDiscardEdits_other": "Abortar descartaria suas edições em {{count}} arquivos. Desfaça-as ou conclua com Continuar.",
+            "abortRebaseCantVerify": "Não é possível confirmar que abortar é seguro aqui. Conclua com Continuar ou aborte em um terminal."
           },
           "checks": {
             "panel": {

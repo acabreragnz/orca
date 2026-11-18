@@ -13982,12 +13982,10 @@
             "noRebaseInProgress": "Kein Rebase in Arbeit",
             "rebaseStopMovedOn": "Der Rebase ist bereits weitergegangen. Prüfe das Panel und versuche es erneut.",
             "rebaseEmptyStep": "In diesem Schritt gibt es nichts zu committen. Brich den Rebase ab oder schließe ihn im Terminal ab.",
-            "abortRebaseDiscardTitle_one": "Rebase abbrechen und Änderungen an {{count}} Datei verwerfen?",
-            "abortRebaseDiscardTitle_other": "Rebase abbrechen und Änderungen an {{count}} Dateien verwerfen?",
             "abortRebaseDiscardFilesMore": "{{files}} und {{count}} weitere",
-            "abortRebaseDiscardConfirm": "Verwerfen und abbrechen",
-            "abortRebaseOtherEditsFirst": "Committe oder stashe zuerst deine anderen Änderungen.",
-            "abortRebaseEditsUnchecked": "Deine Änderungen konnten nicht geprüft werden, daher wurde der Rebase nicht abgebrochen."
+            "abortRebaseWouldDiscardEdits_one": "Abbrechen würde deine Änderungen an {{count}} Datei verwerfen. Mach sie rückgängig oder schließe mit Fortsetzen ab.",
+            "abortRebaseWouldDiscardEdits_other": "Abbrechen würde deine Änderungen an {{count}} Dateien verwerfen. Mach sie rückgängig oder schließe mit Fortsetzen ab.",
+            "abortRebaseCantVerify": "Es lässt sich nicht bestätigen, dass Abbrechen hier sicher ist. Schließe mit Fortsetzen ab oder brich im Terminal ab."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Der ausgewählte Agent konnte nicht gestartet werden.",

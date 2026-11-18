@@ -37,8 +37,7 @@ export function registerFilesystemGitRebaseHandlers({ store }: FilesystemHandler
         {
           ...gitOptions,
           admissionTier: 'interactive',
-          expected: args.expected,
-          expectedDiscards: args.expectedDiscards
+          expected: args.expected
         }
       )
     }

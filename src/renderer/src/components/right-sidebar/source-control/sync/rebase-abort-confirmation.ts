@@ -2,6 +2,7 @@ import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import type {
   ContinueRebaseResult,
+  RebaseAbortSafety,
   RebaseStopToken
 } from '../../../../../../shared/git/status/git-status-types'
 
@@ -12,17 +13,28 @@ export type AbortConfirmRequest = {
   confirmVariant: 'destructive'
 }
 
-/**
- * What the host proved Abort would reset: discards (the stopped pick's own files) and blockedBy
- * (other tracked edits). Null when it could not say (older host, unreadable).
- */
-export type RebaseAbortEvidence = {
-  stop: RebaseStopToken
-  discards: string[]
-  blockedBy: string[]
-} | null
+/** The stop the host read and whether Abort there loses anything; null when it could not say. */
+export type RebaseAbortEvidence = { stop: RebaseStopToken; safety: RebaseAbortSafety } | null
 
 const LISTED_FILE_LIMIT = 3
+
+function abortRebaseDialog(): AbortConfirmRequest {
+  return {
+    title: translate(
+      'auto.components.right.sidebar.SourceControl.abortRebaseConfirmTitle',
+      'Abort rebase?'
+    ),
+    description: translate(
+      'auto.components.right.sidebar.SourceControl.abortRebaseConfirmDescription',
+      'This cancels the rebase in progress and can discard conflict resolutions made during this rebase.'
+    ),
+    confirmLabel: translate(
+      'auto.components.right.sidebar.SourceControl.425f138269',
+      'Abort rebase'
+    ),
+    confirmVariant: 'destructive'
+  }
+}
 
 function listFiles(files: string[]): string {
   const listed = files.slice(0, LISTED_FILE_LIMIT).join(', ')
@@ -36,72 +48,41 @@ function listFiles(files: string[]): string {
     : listed
 }
 
-function abortRebaseDialog(discards: string[]): AbortConfirmRequest {
-  if (discards.length === 0) {
-    return {
-      title: translate(
-        'auto.components.right.sidebar.SourceControl.abortRebaseConfirmTitle',
-        'Abort rebase?'
-      ),
-      description: translate(
-        'auto.components.right.sidebar.SourceControl.abortRebaseConfirmDescription',
-        'This cancels the rebase in progress and can discard conflict resolutions made during this rebase.'
-      ),
-      confirmLabel: translate(
-        'auto.components.right.sidebar.SourceControl.425f138269',
-        'Abort rebase'
-      ),
-      confirmVariant: 'destructive'
-    }
-  }
-  return {
-    title: translate(
-      'auto.components.right.sidebar.SourceControl.abortRebaseDiscardTitle',
-      'Abort rebase and discard edits to {{count}} files?',
-      {
-        count: discards.length,
-        defaultValue_one: 'Abort rebase and discard edits to {{count}} file?'
-      }
-    ),
-    description: listFiles(discards),
-    confirmLabel: translate(
-      'auto.components.right.sidebar.SourceControl.abortRebaseDiscardConfirm',
-      'Discard and abort'
-    ),
-    confirmVariant: 'destructive'
-  }
-}
-
 export function rebaseAbortEvidence(result: ContinueRebaseResult): RebaseAbortEvidence {
-  return result.stop && result.abortWouldDiscard && result.abortBlockedBy
-    ? { stop: result.stop, discards: result.abortWouldDiscard, blockedBy: result.abortBlockedBy }
+  return result.stop && result.abortSafety
+    ? { stop: result.stop, safety: result.abortSafety }
     : null
 }
 
-/** Abort only undoes the rebase: other tracked edits, or edits it could not check, refuse it. */
-export function showRebaseAbortRefused(blockedBy: string[] | null): void {
-  if (blockedBy === null) {
+/** Abort only undoes the rebase: the user's edits, or edits it could not check, refuse it. */
+export function showRebaseAbortRefused(safety: RebaseAbortSafety | null): void {
+  if (safety?.kind === 'edits') {
     toast.error(
       translate(
-        'auto.components.right.sidebar.SourceControl.abortRebaseEditsUnchecked',
-        "Couldn't check your edits, so the rebase wasn't aborted."
-      )
+        'auto.components.right.sidebar.SourceControl.abortRebaseWouldDiscardEdits',
+        'Abort would discard your edits to {{count}} files. Undo them or finish with Continue.',
+        {
+          count: safety.files.length,
+          defaultValue_one:
+            'Abort would discard your edits to {{count}} file. Undo them or finish with Continue.'
+        }
+      ),
+      { description: listFiles(safety.files) }
     )
     return
   }
   toast.error(
     translate(
-      'auto.components.right.sidebar.SourceControl.abortRebaseOtherEditsFirst',
-      'Commit or stash your other edits first.'
-    ),
-    { description: listFiles(blockedBy) }
+      'auto.components.right.sidebar.SourceControl.abortRebaseCantVerify',
+      "Can't confirm Abort is safe here. Finish with Continue or abort in a terminal."
+    )
   )
 }
 
 /**
- * Abort only undoes the rebase. Other tracked edits, or unreadable evidence, refuse it; otherwise
- * the dialog names the pick's own edits it discards. The host rechecks under its lock and returns
- * fresh evidence if anything changed, so this asks again or refuses.
+ * Abort only runs when the host proved it loses nothing of the user's; otherwise it is refused
+ * without asking. The host repeats the check under its lock, so this re-asks if the stop moved and
+ * refuses if the recheck found edits.
  */
 export async function confirmAndAbortRebase({
   inspect,
@@ -112,21 +93,21 @@ export async function confirmAndAbortRebase({
 }: {
   inspect: () => Promise<RebaseAbortEvidence>
   confirm: (request: AbortConfirmRequest) => Promise<boolean>
-  refuse: (blockedBy: string[] | null) => void
+  refuse: (safety: RebaseAbortSafety | null) => void
   beginAbort: () => void
-  abort: (stop: RebaseStopToken, discards: string[]) => Promise<ContinueRebaseResult>
+  abort: (stop: RebaseStopToken) => Promise<ContinueRebaseResult>
 }): Promise<ContinueRebaseResult | 'cancelled' | 'refused'> {
   let evidence = await inspect()
   for (let attempt = 0; attempt < 3; attempt++) {
-    if (!evidence || evidence.blockedBy.length > 0) {
-      refuse(evidence?.blockedBy ?? null)
+    if (evidence?.safety.kind !== 'pristine') {
+      refuse(evidence?.safety ?? null)
       return 'refused'
     }
-    if (!(await confirm(abortRebaseDialog(evidence.discards)))) {
+    if (!(await confirm(abortRebaseDialog()))) {
       return 'cancelled'
     }
     beginAbort()
-    const result = await abort(evidence.stop, evidence.discards)
+    const result = await abort(evidence.stop)
     if (result.outcome !== 'abort_changed' && result.outcome !== 'abort_blocked') {
       return result
     }

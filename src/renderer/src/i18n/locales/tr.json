@@ -14129,12 +14129,10 @@
             "noRebaseInProgress": "Devam eden rebase yok",
             "rebaseStopMovedOn": "Rebase zaten ilerledi. Paneli kontrol edip yeniden deneyin.",
             "rebaseEmptyStep": "Bu adımda commit edilecek bir şey yok. Rebase’i iptal edin veya bir terminalde tamamlayın.",
-            "abortRebaseDiscardTitle_one": "Rebase iptal edilsin ve {{count}} dosyadaki düzenlemeler atılsın mı?",
-            "abortRebaseDiscardTitle_other": "Rebase iptal edilsin ve {{count}} dosyadaki düzenlemeler atılsın mı?",
             "abortRebaseDiscardFilesMore": "{{files}} ve {{count}} tane daha",
-            "abortRebaseDiscardConfirm": "At ve iptal et",
-            "abortRebaseOtherEditsFirst": "Önce diğer düzenlemelerinizi commit edin veya stash yapın.",
-            "abortRebaseEditsUnchecked": "Düzenlemeleriniz kontrol edilemedi, bu yüzden rebase iptal edilmedi."
+            "abortRebaseWouldDiscardEdits_one": "İptal etmek {{count}} dosyadaki düzenlemelerinizi silecek. Bunları geri alın veya Devam ile tamamlayın.",
+            "abortRebaseWouldDiscardEdits_other": "İptal etmek {{count}} dosyadaki düzenlemelerinizi silecek. Bunları geri alın veya Devam ile tamamlayın.",
+            "abortRebaseCantVerify": "Burada iptal etmenin güvenli olduğu doğrulanamıyor. Devam ile tamamlayın veya terminalde iptal edin."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Seçilen ajan başlatılamadı.",

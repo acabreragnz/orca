@@ -14,15 +14,14 @@ export async function continueRuntimeGitRebase(
   action: ContinueRebaseAction,
   request: ContinueRebaseRequest = {}
 ): Promise<ContinueRebaseResult> {
-  const { expected, expectedDiscards } = request
+  const { expected } = request
   const target = context.target
   if (target.kind === 'local' || !context.worktreeId) {
     return window.api.git.continueRebase({
       worktreePath: resolveLocalWorktreePath(context),
       connectionId: context.connectionId,
       action,
-      expected,
-      expectedDiscards
+      expected
     })
   }
   try {
@@ -32,8 +31,7 @@ export async function continueRuntimeGitRebase(
       {
         worktree: toRuntimeWorktreeSelector(context.worktreeId),
         action,
-        ...(expected ? { expected } : {}),
-        ...(expectedDiscards ? { expectedDiscards } : {})
+        ...(expected ? { expected } : {})
       },
       // Each step can run hooks and rewrite many commits; a timeout leaves the outcome unknown.
       { timeoutMs: 120_000 }

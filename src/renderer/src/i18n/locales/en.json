@@ -15011,12 +15011,10 @@
             "noRebaseInProgress": "No rebase is in progress",
             "rebaseStopMovedOn": "The rebase already moved on. Check the panel and try again.",
             "rebaseEmptyStep": "Nothing to commit in this step. Abort the rebase or finish it in a terminal.",
-            "abortRebaseDiscardTitle_one": "Abort rebase and discard edits to {{count}} file?",
-            "abortRebaseDiscardTitle_other": "Abort rebase and discard edits to {{count}} files?",
             "abortRebaseDiscardFilesMore": "{{files}} and {{count}} more",
-            "abortRebaseDiscardConfirm": "Discard and abort",
-            "abortRebaseOtherEditsFirst": "Commit or stash your other edits first.",
-            "abortRebaseEditsUnchecked": "Couldn't check your edits, so the rebase wasn't aborted."
+            "abortRebaseWouldDiscardEdits_one": "Abort would discard your edits to {{count}} file. Undo them or finish with Continue.",
+            "abortRebaseWouldDiscardEdits_other": "Abort would discard your edits to {{count}} files. Undo them or finish with Continue.",
+            "abortRebaseCantVerify": "Can't confirm Abort is safe here. Finish with Continue or abort in a terminal."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Could not start the selected agent.",
