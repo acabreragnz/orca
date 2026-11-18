@@ -514,6 +514,7 @@ import {
   GmailModifyParams,
   GmailSendParams
 } from './google-write-params'
+import { AgentCliUpdateRunParams } from './host-management/agent-cli-update-params'
 import { EnvironmentDoctorParams } from './host-management/environment-doctor-params'
 import {
   ManagedRuntimeAgentParams,
@@ -1075,6 +1076,8 @@ export const RPC_PARAMS_BY_METHOD = {
   'agent.show': AgentShowParams,
   'agentActivity.clear': AgentActivityClearParams,
   'agentActivity.setRead': AgentActivitySetReadParams,
+  'agentCliUpdate.check': null,
+  'agentCliUpdate.run': AgentCliUpdateRunParams,
   'agentHooks.prepareCodexForWslPane': PrepareCodexForWslPaneParams,
   'agentSession.accountUsage': OptionsParams,
   'agentSession.acknowledgeAttention': AcknowledgeAttentionParams,
