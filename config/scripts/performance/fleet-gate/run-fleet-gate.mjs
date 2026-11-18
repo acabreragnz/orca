@@ -486,6 +486,29 @@ async function main() {
     ? { seedDir: options.seed, receipt: null }
     : await ensureSeed({ oldSha, oldBuild: builds.old, outDir })
   const shas = { old: oldSha, new: newSha }
+  if (process.env.FLEET_GATE_NEW_LIST) {
+    const listRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'orca-fleet-gate-list-'))
+    for (const ref of process.env.FLEET_GATE_NEW_LIST.split(',').filter(Boolean)) {
+      try {
+        const sha = resolveCommit(repoRoot, ref)
+        const buildDir = ensureBuild(repoRoot, sha)
+        const run = await measureOnce({
+          arm: 'new',
+          sha,
+          buildDir,
+          seedDir: seed.seedDir,
+          options: { ...options, scenarios: options.scenarios.filter((name) => name !== 'burst'), minWorkspaces: 0 },
+          outDir,
+          runDir: path.join(listRoot, sha)
+        })
+        console.log(`[fleet-gate-list] ${sha} ${JSON.stringify(run.windows?.switch?.metrics ?? run.windows?.switch ?? null).slice(0, 300)}`)
+      } catch (error) {
+        console.log(`[fleet-gate-list] ${ref} failed: ${String(error?.message ?? error).slice(0, 300)}`)
+      }
+    }
+    fs.rmSync(listRoot, { recursive: true, force: true })
+    return
+  }
   const runs = []
   const schedule = buildCounterbalancedSchedule(options.runs, 'old', 'new')
   const runsRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'orca-fleet-gate-'))
