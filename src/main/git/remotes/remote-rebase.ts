@@ -26,6 +26,8 @@ import {
   readRebasingBranch
 } from '../source-control/mutations/rebase-continue'
 import type { RebaseFromBaseResult } from '../../../shared/git/status/git-status-types'
+import { addWslEnvKeys } from '../../../shared/shell/wsl/wsl-env'
+import { headMovedOnlyByRebaseRun, newOrcaRebaseReflogAction } from './orca-rebase-reflog'
 
 export async function gitPullRebaseFromBase(
   worktreePath: string,
@@ -53,6 +55,7 @@ async function gitPullRebaseFromBaseUnlocked(
     let ownRun: { onto: string; origHead: string } | null = null
     // A rebase directory that already existed was not created by this run.
     let rebaseDirAbsentBeforeSpawn = false
+    const reflogAction = newOrcaRebaseReflogAction()
     try {
       const source = await resolveGitRemoteRebaseSource(
         (args) => gitExecFileAsync(args, operationOptions),
@@ -109,7 +112,7 @@ async function gitPullRebaseFromBaseUnlocked(
             ? ['rebase', '--onto', rebaseRef, forkPoint]
             : ['rebase', rebaseRef]
           : ['merge', '--ff-only', rebaseRef],
-        operationOptions
+        { ...operationOptions, env: reflogActionEnv(reflogAction) }
       )
       // rebase.autoStash can land the rebase yet leave the reapplied edits conflicted.
       return {
@@ -118,7 +121,13 @@ async function gitPullRebaseFromBaseUnlocked(
       }
     } catch (error) {
       if (integratedUpstreamOid && ownRun && rebaseDirAbsentBeforeSpawn) {
-        await rememberPausedOrcaRebase(worktreePath, integratedUpstreamOid, ownRun, options)
+        await rememberPausedOrcaRebase(
+          worktreePath,
+          integratedUpstreamOid,
+          ownRun,
+          reflogAction,
+          options
+        )
       }
       throw new Error(normalizeGitErrorMessage(error, 'pull'), { cause: error })
     } finally {
@@ -174,17 +183,35 @@ async function readIntegratedUpstreamOid(
   }
 }
 
-// A conflict stop keeps the proof with the run this spawn created (no rebase directory before it),
-// keyed by the directory identity observed now, so only that run's Continue can claim it.
+function reflogActionEnv(reflogAction: string): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, GIT_REFLOG_ACTION: reflogAction }
+  if (process.platform === 'win32') {
+    addWslEnvKeys(env, ['GIT_REFLOG_ACTION'])
+  }
+  return env
+}
+
+// A conflict stop keeps the proof with the run this spawn created: no rebase directory before it,
+// and every HEAD move since its start tagged with this spawn's reflog action. The proof is keyed by
+// the directory identity observed now, so only that run's Continue can claim it.
 async function rememberPausedOrcaRebase(
   worktreePath: string,
   integratedUpstreamOid: string,
   ownRun: { onto: string; origHead: string },
+  reflogAction: string,
   options: GitRuntimeOptions
 ): Promise<void> {
   try {
     const { signal: _abortedSignal, ...readOptions } = options
     if ((await detectConflictOperation(worktreePath, readOptions)) !== 'rebase') {
+      return
+    }
+    if (
+      !(await headMovedOnlyByRebaseRun(
+        reflogAction,
+        gitOptionsForWorktree(worktreePath, readOptions)
+      ))
+    ) {
       return
     }
     // Another Git may have replaced our paused run; only a run with our onto and orig-head is ours.
