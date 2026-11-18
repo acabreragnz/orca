@@ -1,3 +1,4 @@
+import { useQaDiagQueueLog } from './use-qa-diag-queue-log'
 import { useQueuedMessageEditTransport } from '../../queue/editing/use-queued-message-edit-transport'
 import type { StructuredAgentSessionViewArgs } from './structured-agent-session-view-contract'
 import { useStructuredAgentSessionCommandMenu } from '../../composer/pickers/structured-agent-session-command-refresh'
@@ -86,6 +87,7 @@ export function useStructuredAgentSession(args: StructuredAgentSessionViewArgs) 
   const commandPending = useRef(false)
   const legacyLaunchStop = useStructuredLegacyLaunchStop(sessionId)
   const transportState = useStructuredAgentSessionTransportState(state, transportEnabled)
+  useQaDiagQueueLog(state, transportState)
   const journalItems = transportState.journalItems
   const {
     conversationCommands,
