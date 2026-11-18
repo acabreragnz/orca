@@ -13900,7 +13900,8 @@
             "abortRebaseDiscardTitle_other": "Annuler le rebase et abandonner les modifications de {{count}} fichiers ?",
             "abortRebaseDiscardFilesMore": "{{files}} et {{count}} de plus",
             "abortRebaseDiscardConfirm": "Abandonner et annuler",
-            "abortRebaseMayLoseEdits": "Les modifications non validées peuvent être perdues."
+            "abortRebaseOtherEditsFirst": "Validez ou remisez d'abord vos autres modifications.",
+            "abortRebaseEditsUnchecked": "Impossible de vérifier vos modifications : le rebase n'a pas été annulé."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Impossible de démarrer l'agent sélectionné.",

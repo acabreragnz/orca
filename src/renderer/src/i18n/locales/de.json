@@ -13986,7 +13986,8 @@
             "abortRebaseDiscardTitle_other": "Rebase abbrechen und Änderungen an {{count}} Dateien verwerfen?",
             "abortRebaseDiscardFilesMore": "{{files}} und {{count}} weitere",
             "abortRebaseDiscardConfirm": "Verwerfen und abbrechen",
-            "abortRebaseMayLoseEdits": "Nicht committete Änderungen können verloren gehen."
+            "abortRebaseOtherEditsFirst": "Committe oder stashe zuerst deine anderen Änderungen.",
+            "abortRebaseEditsUnchecked": "Deine Änderungen konnten nicht geprüft werden, daher wurde der Rebase nicht abgebrochen."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Der ausgewählte Agent konnte nicht gestartet werden.",

@@ -10331,7 +10331,8 @@
             "abortRebaseDiscardTitle_other": "Abortar o rebase e descartar as edições em {{count}} arquivos?",
             "abortRebaseDiscardFilesMore": "{{files}} e mais {{count}}",
             "abortRebaseDiscardConfirm": "Descartar e abortar",
-            "abortRebaseMayLoseEdits": "Edições não confirmadas podem ser perdidas."
+            "abortRebaseOtherEditsFirst": "Primeiro faça commit ou stash das suas outras edições.",
+            "abortRebaseEditsUnchecked": "Não foi possível verificar suas edições, então o rebase não foi abortado."
           },
           "checks": {
             "panel": {

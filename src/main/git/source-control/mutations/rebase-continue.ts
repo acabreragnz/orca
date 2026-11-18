@@ -20,7 +20,8 @@ import { forgetOrcaRebaseProvenance, takeOrcaRebaseProvenance } from './orca-reb
 import {
   joinGitOutput,
   readGitErrorOutput,
-  readTrackedPathsAbortWouldReset
+  readRebaseAbortPaths,
+  type RebaseAbortPaths
 } from './rebase-abort-paths'
 
 // Git's own words for a pick the resolution left empty (apply backend; merge backend in older Git).
@@ -59,16 +60,20 @@ async function inspectRebaseStop(
     outcome: 'inspected',
     stop: await readRebaseStopToken(worktreePath, options),
     branch: await readRebasingBranch(worktreePath, options),
-    ...(await readTrackedPathsAbortWouldReset(worktreePath, options).then((paths) =>
-      paths ? { abortWouldDiscard: paths } : {}
-    ))
+    ...abortPathsResult(await readRebaseAbortPaths(worktreePath, options))
   }
 }
 
+function abortPathsResult(
+  paths: RebaseAbortPaths | null
+): Pick<ContinueRebaseResult, 'abortWouldDiscard' | 'abortBlockedBy'> {
+  return paths ? { abortWouldDiscard: paths.discards, abortBlockedBy: paths.blockedBy } : {}
+}
+
 /**
- * Abort what the user confirmed: under the lock that runs it, the stop and the set of paths it
- * resets must still be what the dialog named, otherwise the fresh set returns so it asks again.
- * Without that evidence (the host could not list them) the user accepted "edits may be lost".
+ * Abort only undoes the rebase. Under the lock that runs it: any changed tracked path outside the
+ * stopped pick, or unreadable evidence, refuses; a stop or pick-owned set that differs from what the
+ * user confirmed returns the fresh one so the dialog asks again.
  */
 async function abortConfirmedRebase(
   worktreePath: string,
@@ -80,13 +85,17 @@ async function abortConfirmedRebase(
     return { outcome: 'not_rebasing' }
   }
   const stop = await readRebaseStopToken(worktreePath, options)
-  const discards = await readTrackedPathsAbortWouldReset(worktreePath, options)
+  const paths = await readRebaseAbortPaths(worktreePath, options)
+  if (!paths || paths.blockedBy.length > 0) {
+    return { outcome: 'abort_blocked', stop, ...abortPathsResult(paths) }
+  }
   if (
-    (expected && !sameStop(expected, stop)) ||
-    (expectedDiscards &&
-      (discards === null || discards.join('\0') !== [...expectedDiscards].sort().join('\0')))
+    !expected ||
+    !expectedDiscards ||
+    !sameStop(expected, stop) ||
+    paths.discards.join('\0') !== [...expectedDiscards].sort().join('\0')
   ) {
-    return { outcome: 'abort_changed', stop, ...(discards ? { abortWouldDiscard: discards } : {}) }
+    return { outcome: 'abort_changed', stop, ...abortPathsResult(paths) }
   }
   forgetOrcaRebaseProvenance(worktreePath)
   await gitExecFileAsync(['rebase', '--abort'], gitOptionsForWorktree(worktreePath, options))

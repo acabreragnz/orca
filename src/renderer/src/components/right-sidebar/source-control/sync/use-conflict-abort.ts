@@ -13,6 +13,7 @@ import { refreshSourceControlAfterRemoteAction } from './remote-refresh'
 import {
   confirmAndAbortRebase,
   rebaseAbortEvidence,
+  showRebaseAbortRefused,
   type AbortConfirmRequest,
   type RebaseAbortEvidence
 } from './rebase-abort-confirmation'
@@ -20,7 +21,7 @@ import type { RuntimeGitContext } from '@/runtime/source-control/git/runtime-git
 import { continueRuntimeGitRebase } from '@/runtime/source-control/git/runtime-git-rebase-client'
 import type { SourceControlStatusRefresh } from './use-status-refresh'
 
-// An older or unreachable host cannot prove what Abort resets: that evidence is unknown, never clean.
+// An older or unreachable host cannot prove what Abort resets: unknown evidence refuses Abort.
 async function inspectRebaseAbort(context: RuntimeGitContext): Promise<RebaseAbortEvidence> {
   try {
     return rebaseAbortEvidence(await continueRuntimeGitRebase(context, 'inspect'))
@@ -38,11 +39,12 @@ async function abortConfirmedRebase(
   const result = await confirmAndAbortRebase({
     inspect: () => inspectRebaseAbort(context),
     confirm,
+    refuse: showRebaseAbortRefused,
     beginAbort,
     abort: (expected, expectedDiscards) =>
       continueRuntimeGitRebase(context, 'abort', { expected, expectedDiscards })
   })
-  if (result !== 'cancelled' && result.outcome === 'failed') {
+  if (result !== 'cancelled' && result !== 'refused' && result.outcome === 'failed') {
     throw new Error(result.message)
   }
 }

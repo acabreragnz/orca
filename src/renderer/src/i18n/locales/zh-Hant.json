@@ -13794,7 +13794,8 @@
             "abortRebaseDiscardTitle_other": "中止重定基底並捨棄對 {{count}} 個檔案的編輯？",
             "abortRebaseDiscardFilesMore": "{{files}} 及另外 {{count}} 個",
             "abortRebaseDiscardConfirm": "捨棄並中止",
-            "abortRebaseMayLoseEdits": "未提交的編輯可能會遺失。"
+            "abortRebaseOtherEditsFirst": "請先提交或儲藏你的其他編輯。",
+            "abortRebaseEditsUnchecked": "無法檢查你的編輯，因此未中止重訂基底。"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "無法啟動選定的代理程式。",

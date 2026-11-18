@@ -47,6 +47,8 @@ export type ContinueRebaseOutcome =
   | 'aborted'
   // The stop or the set of paths Abort would reset changed since the user confirmed; nothing ran.
   | 'abort_changed'
+  // Abort would discard tracked edits outside the stopped pick (or could not tell); nothing ran.
+  | 'abort_blocked'
 /** expected binds continue/abort to a stop; expectedDiscards binds abort to a path set. */
 export type ContinueRebaseRequest = {
   expected?: RebaseStopToken
@@ -62,8 +64,10 @@ export type ContinueRebaseResult = {
   branch?: string | null
   // Set when this Continue finished a rebase Orca started over an integrated upstream tip.
   integratedUpstreamOid?: string
-  // inspect/abort_changed: every tracked path Abort would reset; absent when Git could not say.
+  // inspect/abort_*: changed tracked paths the stopped pick owns; absent when Git could not say.
   abortWouldDiscard?: string[]
+  // inspect/abort_*: changed tracked paths outside the stopped pick, which block Abort.
+  abortBlockedBy?: string[]
 }
 export type GitSubmoduleStatus = {
   commitChanged: boolean

@@ -14082,7 +14082,8 @@
             "abortRebaseDiscardTitle_other": "リベースを中止して {{count}} 個のファイルの編集を破棄しますか？",
             "abortRebaseDiscardFilesMore": "{{files}} ほか {{count}} 件",
             "abortRebaseDiscardConfirm": "破棄して中止",
-            "abortRebaseMayLoseEdits": "コミットされていない編集が失われる可能性があります。"
+            "abortRebaseOtherEditsFirst": "先にほかの編集をコミットするかスタッシュしてください。",
+            "abortRebaseEditsUnchecked": "編集内容を確認できなかったため、リベースは中止されませんでした。"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "選択した Agent を開始できませんでした。",

@@ -14371,7 +14371,8 @@
             "abortRebaseDiscardTitle_other": "Прервать rebase и отменить изменения в {{count}} файла?",
             "abortRebaseDiscardFilesMore": "{{files}} и ещё {{count}}",
             "abortRebaseDiscardConfirm": "Отменить изменения и прервать",
-            "abortRebaseMayLoseEdits": "Незакоммиченные изменения могут быть потеряны."
+            "abortRebaseOtherEditsFirst": "Сначала закоммитьте или спрячьте в stash другие изменения.",
+            "abortRebaseEditsUnchecked": "Не удалось проверить ваши изменения, поэтому перебазирование не прервано."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Не удалось запустить выбранного агента.",

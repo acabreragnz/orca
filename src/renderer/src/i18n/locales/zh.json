@@ -14135,7 +14135,8 @@
             "abortRebaseDiscardTitle_other": "中止变基并丢弃对 {{count}} 个文件的修改？",
             "abortRebaseDiscardFilesMore": "{{files}} 等另外 {{count}} 个",
             "abortRebaseDiscardConfirm": "丢弃并中止",
-            "abortRebaseMayLoseEdits": "未提交的编辑可能会丢失。"
+            "abortRebaseOtherEditsFirst": "请先提交或储藏你的其他编辑。",
+            "abortRebaseEditsUnchecked": "无法检查你的编辑，因此未中止变基。"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "无法启动选定的代理",

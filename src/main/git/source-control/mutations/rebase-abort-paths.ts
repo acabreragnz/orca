@@ -4,11 +4,17 @@ import {
 } from '../../command-runner/git-runtime-options'
 import { gitExecFileAsync } from '../../command-runner/git-exec-file'
 
-/** Every tracked path Abort would reset, staged and unstaged listed separately; null when unknown. */
-export async function readTrackedPathsAbortWouldReset(
+/**
+ * What git rebase --abort would reset. discards: changed tracked paths the stopped pick owns (its
+ * own files or Git's unmerged ones), i.e. the rebase's resolution. blockedBy: any other changed
+ * tracked path, which Abort must not discard. Null when Git cannot say.
+ */
+export type RebaseAbortPaths = { discards: string[]; blockedBy: string[] }
+
+export async function readRebaseAbortPaths(
   worktreePath: string,
   options: GitRuntimeOptions
-): Promise<string[] | null> {
+): Promise<RebaseAbortPaths | null> {
   const gitOptions = gitOptionsForWorktree(worktreePath, options)
   try {
     // Separately, so staged content an unstaged edit cancels out is still named; -z keeps names exact.
@@ -20,7 +26,34 @@ export async function readTrackedPathsAbortWouldReset(
       ['diff', '--name-only', '-z', '--no-renames', '--'],
       gitOptions
     )
-    return [...new Set([...splitNul(staged.stdout), ...splitNul(unstaged.stdout)])].sort()
+    const changed = [...new Set([...splitNul(staged.stdout), ...splitNul(unstaged.stdout)])].sort()
+    if (changed.length === 0) {
+      return { discards: [], blockedBy: [] }
+    }
+    const pick = await gitExecFileAsync(
+      [
+        'diff-tree',
+        '--root',
+        '--no-commit-id',
+        '--name-only',
+        '-r',
+        '-z',
+        '--no-renames',
+        'REBASE_HEAD',
+        '--'
+      ],
+      gitOptions
+    )
+    const unmerged = await gitExecFileAsync(['ls-files', '-u', '-z'], gitOptions)
+    const owned = new Set([
+      ...splitNul(pick.stdout),
+      // Entries are "<mode> <oid> <stage>\t<path>".
+      ...splitNul(unmerged.stdout).map((entry) => entry.slice(entry.indexOf('\t') + 1))
+    ])
+    return {
+      discards: changed.filter((file) => owned.has(file)),
+      blockedBy: changed.filter((file) => !owned.has(file))
+    }
   } catch {
     return null
   }
