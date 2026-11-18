@@ -487,7 +487,7 @@ async function focusTerminal(page) {
 function installMarkers() {
   const samples = []
   const pending = new Map()
-  const textarea = document.querySelector('[data-keylat-input="1"]')
+  let textarea = document.querySelector('[data-keylat-input="1"]')
   const onDocCapture = (event) => {
     if (event.target !== textarea || !event.isTrusted) {
       return
@@ -545,6 +545,14 @@ function installMarkers() {
     loafObserver.observe({ type: 'long-animation-frame', buffered: false })
   } catch {}
   globalThis.__keylatMarkers = {
+    retarget() {
+      const next = document.querySelector('[data-keylat-input="1"]')
+      if (next && next !== textarea) {
+        textarea?.removeEventListener('keydown', onTarget)
+        textarea = next
+        textarea.addEventListener('keydown', onTarget)
+      }
+    },
     collect() {
       observer.disconnect()
       loafObserver.disconnect()
@@ -635,7 +643,7 @@ async function measureKeys({ label, buildDir, seedDir, options, runDir, outDir }
   const userDataDir = path.join(runDir, 'user-data')
   fs.cpSync(seedDir, userDataDir, { recursive: true, mode: fs.constants.COPYFILE_FICLONE })
   const launchedAt = Date.now()
-  const { page, close } = await launchCopy({ buildDir, runDir, userDataDir, label, outDir })
+  const { app, page, close } = await launchCopy({ buildDir, runDir, userDataDir, label, outDir })
   const result = { label, notes: [] }
   try {
     for (let waited = 0; waited < 60 && hookEndpointMtime(userDataDir) < launchedAt; waited += 1) {
@@ -696,10 +704,104 @@ async function measureKeys({ label, buildDir, seedDir, options, runDir, outDir }
       await cdp.send('Profiler.setSamplingInterval', { interval: 200 })
       await cdp.send('Profiler.start')
     }
-    for (let index = 0; index < options.keys; index += 1) {
-      await page.keyboard.press(index % 25 === 24 ? 'Backspace' : 'a')
-      await sleep(options.keyIntervalMs)
+    const segments = []
+    const menuCalls = async () =>
+      page.evaluate(() =>
+        (globalThis.__keylat?.snapshot() ?? [])
+          .filter((row) => row.site.startsWith('[document capture keydown] handleKeyDown'))
+          .reduce((sum, row) => sum + row.n, 0)
+      )
+    const typeSegment = async (name, count) => {
+      const before = await menuCalls()
+      for (let index = 0; index < count; index += 1) {
+        await page.keyboard.press(index % 25 === 24 ? 'Backspace' : 'a')
+        await sleep(options.keyIntervalMs)
+        if (options.focusSwitches && index % 30 === 15) {
+          switches.push(await (switches.length % 2 === 0 ? appSwitch() : browserSwitch()))
+        }
+      }
+      segments.push({ name, keys: count, menuListenerCallsPerKey: Math.round(((await menuCalls()) - before) / count) })
     }
+    const switches = []
+    const worktreeId = await page.evaluate(() => window.__store.getState().activeWorktreeId)
+    const refocusTerminal = async () => {
+      await page.evaluate(() => {
+        document.querySelectorAll('[data-keylat-input]').forEach((el) => el.removeAttribute('data-keylat-input'))
+        const visible = [...document.querySelectorAll('.xterm-helper-textarea')].find(
+          (element) => element.closest('.xterm')?.getClientRects().length
+        )
+        visible?.setAttribute('data-keylat-input', '1')
+      })
+      await page.locator('[data-keylat-input="1"]').first().focus().catch(() => {})
+      await page.evaluate(() => globalThis.__keylatMarkers?.retarget?.())
+    }
+    // App switch away and back: the window's own blur/focus handlers, without OS activation.
+    const appSwitch = async () => {
+      const started = Date.now()
+      await app.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
+        win?.emit('blur')
+      })
+      await page.evaluate(() => {
+        document.activeElement?.blur?.()
+        window.dispatchEvent(new FocusEvent('blur'))
+      })
+      await sleep(400)
+      await app.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
+        win?.emit('focus')
+      })
+      await page.evaluate(() => window.dispatchEvent(new FocusEvent('focus')))
+      await refocusTerminal()
+      return { kind: 'app', ms: Date.now() - started }
+    }
+    let browserReady = null
+    const browserSwitch = async () => {
+      const started = Date.now()
+      if (browserReady === null) {
+        browserReady = await page.evaluate((id) => {
+          try {
+            window.__store.getState().createBrowserTab(id, 'about:blank')
+            return true
+          } catch (error) {
+            return String(error?.message ?? error).slice(0, 200)
+          }
+        }, worktreeId)
+      } else {
+        await page.evaluate((id) => window.__store.getState().setActiveTabType('browser', id), worktreeId)
+      }
+      await sleep(600)
+      const webviewFocused = await page
+        .locator('webview')
+        .first()
+        .focus({ timeout: 1_000 })
+        .then(() => true)
+        .catch(() => false)
+      await sleep(300)
+      await page.evaluate((id) => window.__store.getState().setActiveTabType('terminal', id), worktreeId)
+      await sleep(500)
+      await refocusTerminal()
+      return { kind: 'browser', ms: Date.now() - started, browserReady, webviewFocused }
+    }
+    await typeSegment('steady', Math.round(options.keys / 2))
+    await typeSegment('with-switches', options.keys - Math.round(options.keys / 2))
+    if (options.focusSwitches) {
+      // Use the app: switch workspaces a few times, then come back and type again.
+      await page.evaluate(async (home) => {
+        const state = window.__store.getState()
+        const ids = Object.keys(state.tabsByWorktree ?? {}).filter((id) => id !== home).slice(0, 6)
+        for (const id of ids) {
+          window.__store.getState().setActiveWorktree(id)
+          await new Promise((resolve) => setTimeout(resolve, 700))
+        }
+        window.__store.getState().setActiveWorktree(home)
+      }, worktreeId)
+      await sleep(2_000)
+      await refocusTerminal()
+      await typeSegment('after-workspace-switches', 40)
+    }
+    result.segments = segments
+    result.switches = switches
     await sleep(1_000)
     if (options.profile) {
       const { profile } = await cdp.send('Profiler.stop')
@@ -771,7 +873,8 @@ async function keylatMain() {
     keyIntervalMs: Number(get('--key-interval-ms', '120')),
     runs: Number(get('--runs', '2')),
     live: get('--live', '1') === '1',
-    profile: get('--profile', '1') === '1'
+    profile: get('--profile', '1') === '1',
+    focusSwitches: get('--focus-switches', '0') === '1'
   }
   const outDir = get('--out', path.join(CACHE_ROOT, 'keylat-reports'))
   fs.mkdirSync(outDir, { recursive: true })
