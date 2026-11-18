@@ -724,6 +724,7 @@ async function measureKeys({ label, buildDir, seedDir, options, runDir, outDir }
     }
     const switches = []
     const worktreeId = await page.evaluate(() => window.__store.getState().activeWorktreeId)
+    const terminalTabId = await page.evaluate(() => window.__store.getState().getActiveTab?.()?.id ?? null)
     const refocusTerminal = async () => {
       await page.evaluate(() => {
         document.querySelectorAll('[data-keylat-input]').forEach((el) => el.removeAttribute('data-keylat-input'))
@@ -732,7 +733,7 @@ async function measureKeys({ label, buildDir, seedDir, options, runDir, outDir }
         )
         visible?.setAttribute('data-keylat-input', '1')
       })
-      await page.locator('[data-keylat-input="1"]').first().focus().catch(() => {})
+      await page.locator('[data-keylat-input="1"]').first().focus({ timeout: 3_000 }).catch(() => {})
       await page.evaluate(() => globalThis.__keylatMarkers?.retarget?.())
     }
     // App switch away and back: the window's own blur/focus handlers, without OS activation.
@@ -753,7 +754,8 @@ async function measureKeys({ label, buildDir, seedDir, options, runDir, outDir }
       })
       await page.evaluate(() => window.dispatchEvent(new FocusEvent('focus')))
       await refocusTerminal()
-      return { kind: 'app', ms: Date.now() - started }
+      const backOnTerminal = await page.evaluate(() => document.activeElement?.getAttribute('data-keylat-input') === '1')
+      return { kind: 'app', ms: Date.now() - started, backOnTerminal }
     }
     let browserReady = null
     const browserSwitch = async () => {
@@ -778,10 +780,21 @@ async function measureKeys({ label, buildDir, seedDir, options, runDir, outDir }
         .then(() => true)
         .catch(() => false)
       await sleep(300)
-      await page.evaluate((id) => window.__store.getState().setActiveTabType('terminal', id), worktreeId)
+      await page.evaluate(
+        ({ id, tab }) => {
+          const state = window.__store.getState()
+          if (tab && typeof state.activateTab === 'function') {
+            state.activateTab(tab)
+          } else {
+            state.setActiveTabType('terminal', id)
+          }
+        },
+        { id: worktreeId, tab: terminalTabId }
+      )
       await sleep(500)
       await refocusTerminal()
-      return { kind: 'browser', ms: Date.now() - started, browserReady, webviewFocused }
+      const backOnTerminal = await page.evaluate(() => document.activeElement?.getAttribute('data-keylat-input') === '1')
+      return { kind: 'browser', ms: Date.now() - started, browserReady, webviewFocused, backOnTerminal }
     }
     await typeSegment('steady', Math.round(options.keys / 2))
     await typeSegment('with-switches', options.keys - Math.round(options.keys / 2))
