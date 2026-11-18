@@ -14133,11 +14133,7 @@
             "abortRebaseDiscardTitle_other": "Rebase iptal edilsin ve {{count}} dosyadaki düzenlemeler atılsın mı?",
             "abortRebaseDiscardFilesMore": "{{files}} ve {{count}} tane daha",
             "abortRebaseDiscardConfirm": "At ve iptal et",
-            "abortRebaseMayLoseEdits": "Commit edilmemiş düzenlemeler kaybolabilir.",
-            "abortRebaseEditsSaved": "Rebase iptal edildi. Düzenlemeleriniz kaydedildi.",
-            "restoreAbortedEdits": "Geri yükle",
-            "restoreAbortedEditsFailed": "Düzenlemeleriniz geri yüklenemedi",
-            "restoreAbortedEditsConflicts": "Düzenlemeler çakışmalarla geri yüklendi. Bunları Değişiklikler bölümünde çözün."
+            "abortRebaseMayLoseEdits": "Commit edilmemiş düzenlemeler kaybolabilir."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Seçilen ajan başlatılamadı.",

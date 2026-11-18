@@ -18,12 +18,10 @@ import { resolveGitDir } from '../resolve-git-dir'
 import { AUTOSTASH_REAPPLY_CONFLICT, detectConflictOperation } from './git-conflict-operation'
 import { forgetOrcaRebaseProvenance, takeOrcaRebaseProvenance } from './orca-rebase-provenance'
 import {
-  backUpEditsBeforeAbort,
   joinGitOutput,
   readGitErrorOutput,
-  readTrackedPathsAbortWouldReset,
-  restoreAbortBackup
-} from './rebase-abort-backup'
+  readTrackedPathsAbortWouldReset
+} from './rebase-abort-paths'
 
 // Git's own words for a pick the resolution left empty (apply backend; merge backend in older Git).
 const EMPTY_PICK_OUTPUT = /No changes - did you forget to use 'git add'|nothing to commit/i
@@ -38,16 +36,14 @@ export async function continueRebase(
   action: ContinueRebaseAction = 'continue',
   options: GitRuntimeOptions & ContinueRebaseRequest = {}
 ): Promise<ContinueRebaseResult> {
-  const { expected, expectedDiscards, backup, ...gitOptions } = options
+  const { expected, expectedDiscards, ...gitOptions } = options
   return runWithGitWorktreeOperationLock(worktreePath, gitOptions.signal, () =>
     runWithGitReadCacheInvalidation(() =>
       action === 'inspect'
         ? inspectRebaseStop(worktreePath, gitOptions)
         : action === 'abort'
           ? abortConfirmedRebase(worktreePath, expected, expectedDiscards, gitOptions)
-          : action === 'restore'
-            ? restoreAbortBackup(worktreePath, backup, gitOptions)
-            : continueRebaseUnlocked(worktreePath, expected, gitOptions)
+          : continueRebaseUnlocked(worktreePath, expected, gitOptions)
     )
   )
 }
@@ -70,9 +66,9 @@ async function inspectRebaseStop(
 }
 
 /**
- * Abort is lossless: under the lock that runs it, tracked edits are first pinned as a backup, and
- * no backup means no abort. A stop or path set the user confirmed must also still hold, otherwise
- * the fresh set returns so the dialog asks again; without that evidence the backup alone covers it.
+ * Abort what the user confirmed: under the lock that runs it, the stop and the set of paths it
+ * resets must still be what the dialog named, otherwise the fresh set returns so it asks again.
+ * Without that evidence (the host could not list them) the user accepted "edits may be lost".
  */
 async function abortConfirmedRebase(
   worktreePath: string,
@@ -92,15 +88,9 @@ async function abortConfirmedRebase(
   ) {
     return { outcome: 'abort_changed', stop, ...(discards ? { abortWouldDiscard: discards } : {}) }
   }
-  let backup: string | null
-  try {
-    backup = await backUpEditsBeforeAbort(worktreePath, options)
-  } catch (error) {
-    return { outcome: 'failed', message: readGitErrorOutput(error), stop }
-  }
   forgetOrcaRebaseProvenance(worktreePath)
   await gitExecFileAsync(['rebase', '--abort'], gitOptionsForWorktree(worktreePath, options))
-  return { outcome: 'aborted', ...(backup ? { backup } : {}) }
+  return { outcome: 'aborted' }
 }
 
 async function continueRebaseUnlocked(

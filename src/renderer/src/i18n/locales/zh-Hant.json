@@ -13794,11 +13794,7 @@
             "abortRebaseDiscardTitle_other": "中止重定基底並捨棄對 {{count}} 個檔案的編輯？",
             "abortRebaseDiscardFilesMore": "{{files}} 及另外 {{count}} 個",
             "abortRebaseDiscardConfirm": "捨棄並中止",
-            "abortRebaseMayLoseEdits": "未提交的編輯可能會遺失。",
-            "abortRebaseEditsSaved": "重訂基底已中止。你的編輯已儲存。",
-            "restoreAbortedEdits": "還原",
-            "restoreAbortedEditsFailed": "無法還原你的編輯",
-            "restoreAbortedEditsConflicts": "編輯已還原，但有衝突。請在「變更」中解決。"
+            "abortRebaseMayLoseEdits": "未提交的編輯可能會遺失。"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "無法啟動選定的代理程式。",

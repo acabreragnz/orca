@@ -254,7 +254,7 @@ export const GitForkSync = WorktreeSelector.extend({
 })
 
 export const GitContinueRebase = WorktreeSelector.extend({
-  action: z.enum(['continue', 'inspect', 'abort', 'restore']).optional(),
+  action: z.enum(['continue', 'inspect', 'abort']).optional(),
   // Continue refuses unless the rebase is still at the stop the user was shown.
   expected: z
     .object({
@@ -264,12 +264,7 @@ export const GitContinueRebase = WorktreeSelector.extend({
     })
     .optional(),
   // abort only: the paths the user agreed to discard.
-  expectedDiscards: z.array(z.string()).optional(),
-  // restore only: an abort backup commit.
-  backup: z
-    .string()
-    .regex(/^[0-9a-f]{40,64}$/)
-    .optional()
+  expectedDiscards: z.array(z.string()).optional()
 })
 
 export const GitRebaseFromBase = WorktreeSelector.extend({

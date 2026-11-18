@@ -14082,11 +14082,7 @@
             "abortRebaseDiscardTitle_other": "リベースを中止して {{count}} 個のファイルの編集を破棄しますか？",
             "abortRebaseDiscardFilesMore": "{{files}} ほか {{count}} 件",
             "abortRebaseDiscardConfirm": "破棄して中止",
-            "abortRebaseMayLoseEdits": "コミットされていない編集が失われる可能性があります。",
-            "abortRebaseEditsSaved": "リベースを中止しました。編集内容は保存されています。",
-            "restoreAbortedEdits": "復元",
-            "restoreAbortedEditsFailed": "編集内容を復元できませんでした",
-            "restoreAbortedEditsConflicts": "編集内容を復元しましたが、競合があります。「変更」で解決してください。"
+            "abortRebaseMayLoseEdits": "コミットされていない編集が失われる可能性があります。"
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "選択した Agent を開始できませんでした。",

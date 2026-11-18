@@ -14371,11 +14371,7 @@
             "abortRebaseDiscardTitle_other": "Прервать rebase и отменить изменения в {{count}} файла?",
             "abortRebaseDiscardFilesMore": "{{files}} и ещё {{count}}",
             "abortRebaseDiscardConfirm": "Отменить изменения и прервать",
-            "abortRebaseMayLoseEdits": "Незакоммиченные изменения могут быть потеряны.",
-            "abortRebaseEditsSaved": "Перебазирование прервано. Ваши изменения сохранены.",
-            "restoreAbortedEdits": "Восстановить",
-            "restoreAbortedEditsFailed": "Не удалось восстановить ваши изменения",
-            "restoreAbortedEditsConflicts": "Изменения восстановлены с конфликтами. Разрешите их в разделе «Изменения»."
+            "abortRebaseMayLoseEdits": "Незакоммиченные изменения могут быть потеряны."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Не удалось запустить выбранного агента.",

@@ -19,7 +19,6 @@ import {
 import type { RuntimeGitContext } from '@/runtime/source-control/git/runtime-git-client-context'
 import { continueRuntimeGitRebase } from '@/runtime/source-control/git/runtime-git-rebase-client'
 import type { SourceControlStatusRefresh } from './use-status-refresh'
-import { showRebaseAbortBackupToast } from './rebase-abort-backup-toast'
 
 // An older or unreachable host cannot prove what Abort resets: that evidence is unknown, never clean.
 async function inspectRebaseAbort(context: RuntimeGitContext): Promise<RebaseAbortEvidence> {
@@ -30,12 +29,11 @@ async function inspectRebaseAbort(context: RuntimeGitContext): Promise<RebaseAbo
   }
 }
 
-/** Throws when the host refused (e.g. no backup could be made), so the caller reports it. */
-async function abortRebaseKeepingEdits(
+/** Throws when the host refused, so the caller reports it. */
+async function abortConfirmedRebase(
   context: RuntimeGitContext,
   confirm: (request: AbortConfirmRequest) => Promise<boolean>,
-  beginAbort: () => void,
-  refreshAfterRestore: () => void
+  beginAbort: () => void
 ): Promise<void> {
   const result = await confirmAndAbortRebase({
     inspect: () => inspectRebaseAbort(context),
@@ -44,14 +42,8 @@ async function abortRebaseKeepingEdits(
     abort: (expected, expectedDiscards) =>
       continueRuntimeGitRebase(context, 'abort', { expected, expectedDiscards })
   })
-  if (result === 'cancelled') {
-    return
-  }
-  if (result.outcome === 'failed') {
+  if (result !== 'cancelled' && result.outcome === 'failed') {
     throw new Error(result.message)
-  }
-  if (result.backup) {
-    showRebaseAbortBackupToast(context, result.backup, refreshAfterRestore)
   }
 }
 
@@ -125,14 +117,7 @@ export function useSourceControlConflictAbort({
         operationStore.setState({ isAbortingOperation: true, remoteActionError: null })
       try {
         if (isRebase) {
-          await abortRebaseKeepingEdits(context, confirmAction, beginAbort, () =>
-            refreshSourceControlAfterRemoteAction({
-              worktreeId: activeWorktreeId,
-              refreshGitStatus: refreshActiveGitStatusAfterMutation,
-              refreshBranchCompare: refreshBranchCompareRef.current,
-              refreshGitHistory: refreshGitHistoryRef.current
-            })
-          )
+          await abortConfirmedRebase(context, confirmAction, beginAbort)
         } else {
           beginAbort()
           await abortRuntimeGitMerge(context)

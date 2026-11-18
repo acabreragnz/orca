@@ -85,7 +85,7 @@ export function rebaseAbortEvidence(result: ContinueRebaseResult): RebaseAbortEv
 /**
  * Abort resets every tracked path, so the dialog names them (or says it cannot tell). The host
  * backs those edits up before aborting, and refuses if the confirmed stop or set changed; then ask
- * again. Unknown evidence sends no binding: the backup alone keeps the edits.
+ * again. Unknown evidence sends no binding, after the user accepted that edits may be losts.
  */
 export async function confirmAndAbortRebase({
   inspect,

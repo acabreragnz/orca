@@ -10331,11 +10331,7 @@
             "abortRebaseDiscardTitle_other": "Abortar o rebase e descartar as edições em {{count}} arquivos?",
             "abortRebaseDiscardFilesMore": "{{files}} e mais {{count}}",
             "abortRebaseDiscardConfirm": "Descartar e abortar",
-            "abortRebaseMayLoseEdits": "Edições não confirmadas podem ser perdidas.",
-            "abortRebaseEditsSaved": "Rebase abortado. Suas edições foram salvas.",
-            "restoreAbortedEdits": "Restaurar",
-            "restoreAbortedEditsFailed": "Não foi possível restaurar suas edições",
-            "restoreAbortedEditsConflicts": "Edições restauradas com conflitos. Resolva-os em Alterações."
+            "abortRebaseMayLoseEdits": "Edições não confirmadas podem ser perdidas."
           },
           "checks": {
             "panel": {

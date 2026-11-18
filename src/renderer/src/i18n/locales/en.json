@@ -15015,11 +15015,7 @@
             "abortRebaseDiscardTitle_other": "Abort rebase and discard edits to {{count}} files?",
             "abortRebaseDiscardFilesMore": "{{files}} and {{count}} more",
             "abortRebaseDiscardConfirm": "Discard and abort",
-            "abortRebaseMayLoseEdits": "Uncommitted edits may be lost.",
-            "abortRebaseEditsSaved": "Rebase aborted. Your edits are saved.",
-            "restoreAbortedEdits": "Restore",
-            "restoreAbortedEditsFailed": "Couldn't restore your edits",
-            "restoreAbortedEditsConflicts": "Edits restored with conflicts. Resolve them in Changes."
+            "abortRebaseMayLoseEdits": "Uncommitted edits may be lost."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Could not start the selected agent.",

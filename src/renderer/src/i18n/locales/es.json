@@ -13629,11 +13629,7 @@
             "abortRebaseDiscardTitle_other": "¿Abortar el rebase y descartar los cambios en {{count}} archivos?",
             "abortRebaseDiscardFilesMore": "{{files}} y {{count}} más",
             "abortRebaseDiscardConfirm": "Descartar y abortar",
-            "abortRebaseMayLoseEdits": "Las ediciones sin confirmar pueden perderse.",
-            "abortRebaseEditsSaved": "Rebase abortado. Tus ediciones están guardadas.",
-            "restoreAbortedEdits": "Restaurar",
-            "restoreAbortedEditsFailed": "No se pudieron restaurar tus ediciones",
-            "restoreAbortedEditsConflicts": "Ediciones restauradas con conflictos. Resuélvelos en Cambios."
+            "abortRebaseMayLoseEdits": "Las ediciones sin confirmar pueden perderse."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "No se pudo iniciar el agente seleccionado.",

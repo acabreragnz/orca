@@ -33,15 +33,12 @@ export function registerFilesystemGitRebaseHandlers({ store }: FilesystemHandler
       )
       return continueRebase(
         worktreePath,
-        args.action === 'inspect' || args.action === 'abort' || args.action === 'restore'
-          ? args.action
-          : 'continue',
+        args.action === 'inspect' || args.action === 'abort' ? args.action : 'continue',
         {
           ...gitOptions,
           admissionTier: 'interactive',
           expected: args.expected,
-          expectedDiscards: args.expectedDiscards,
-          backup: args.backup
+          expectedDiscards: args.expectedDiscards
         }
       )
     }

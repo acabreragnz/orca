@@ -13986,11 +13986,7 @@
             "abortRebaseDiscardTitle_other": "Rebase abbrechen und Änderungen an {{count}} Dateien verwerfen?",
             "abortRebaseDiscardFilesMore": "{{files}} und {{count}} weitere",
             "abortRebaseDiscardConfirm": "Verwerfen und abbrechen",
-            "abortRebaseMayLoseEdits": "Nicht committete Änderungen können verloren gehen.",
-            "abortRebaseEditsSaved": "Rebase abgebrochen. Deine Änderungen sind gesichert.",
-            "restoreAbortedEdits": "Wiederherstellen",
-            "restoreAbortedEditsFailed": "Deine Änderungen konnten nicht wiederhergestellt werden",
-            "restoreAbortedEditsConflicts": "Änderungen mit Konflikten wiederhergestellt. Löse sie unter Änderungen."
+            "abortRebaseMayLoseEdits": "Nicht committete Änderungen können verloren gehen."
           },
           "SourceControlAgentActionDialog": {
             "8e856842d1": "Der ausgewählte Agent konnte nicht gestartet werden.",
