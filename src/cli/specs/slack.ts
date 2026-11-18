@@ -55,14 +55,15 @@ export const SLACK_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['slack', 'post'],
-    summary: 'Post a message in a Slack channel or thread as this bot',
-    usage: 'orca slack post <place> (<text> | --text-file <path|->) [--json]',
+    summary: 'Post a message in a Slack channel or thread, or DM a person, as this bot',
+    usage: 'orca slack post <place|@person> (<text> | --text-file <path|->) [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'ref', 'text', 'text-file'],
     positionalArgs: ['ref', 'text'],
     notes: [
       AS_BOT,
       PLACE,
       `A message ref posts in its thread. ${WOKEN}`,
+      "A person (@name, user:<id> or a ref from `orca slack find @name`) gets it in the bot's DM with them.",
       POSTED_REF,
       TEXT_FILE,
       SLACK_MENTION,
