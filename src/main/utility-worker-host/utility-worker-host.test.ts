@@ -9,8 +9,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 const fork = vi.hoisted(() => vi.fn())
 vi.mock('electron', () => ({ app: { once: vi.fn() }, utilityProcess: { fork } }))
+const recordDurableCrashBreadcrumb = vi.hoisted(() => vi.fn())
 vi.mock('../crash-reporting/breadcrumbs/durable-crash-breadcrumb', () => ({
-  recordDurableCrashBreadcrumb: vi.fn()
+  recordDurableCrashBreadcrumb
 }))
 
 const { UtilityWorkerHost } = await import('./utility-worker-host')
@@ -19,6 +20,7 @@ let root = ''
 let hostEntry = ''
 let echoEntry = ''
 let quietEntry = ''
+let throwingEntry = ''
 
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), 'orca-utility-worker-host-'))
@@ -44,6 +46,15 @@ parentPort.on('message', (message) =>
 beforeAll(() => {
   quietEntry = join(root, 'quiet.js')
   writeFileSync(quietEntry, 'setInterval(() => undefined, 1000)')
+  throwingEntry = join(root, 'throwing.js')
+  writeFileSync(
+    throwingEntry,
+    `const { parentPort } = require('node:worker_threads')
+parentPort.postMessage('ready')
+parentPort.on('message', () => {
+  throw Object.assign(new Error('out of memory'), { code: 'ERR_WORKER_OUT_OF_MEMORY' })
+})`
+  )
 })
 const threads: Worker[] = []
 // A host thread still starting must not outlive the bundle it loads.
@@ -192,6 +203,28 @@ describe('UtilityWorkerHost', () => {
     await Promise.all([first.terminate(), during.terminate(), after.terminate()])
   })
 
+  it("records a failed worker's work while its host keeps running", async () => {
+    fork.mockImplementation(threadUtilityProcess)
+    const worker = new UtilityWorkerHost(
+      'test host',
+      () => hostEntry,
+      ({ filename, workerData }) => new Worker(filename, { workerData }),
+      (workers) => ({ r0_readOp: `point:continuation-context x${workers.length}` })
+    ).spawn({ filename: throwingEntry, name: 'orca-journal-sql-reader', workerData: {} })
+    await nextMessage(worker)
+    const failed = new Promise<Error>((resolve) => worker.once('error', resolve))
+    worker.postMessage('read')
+    expect((await failed).message).toBe('out of memory')
+    expect(recordDurableCrashBreadcrumb).toHaveBeenCalledWith(
+      'worker_thread_failed',
+      expect.objectContaining({
+        serviceName: 'test host',
+        code: 'ERR_WORKER_OUT_OF_MEMORY',
+        r0_readOp: 'point:continuation-context x1'
+      })
+    )
+    await worker.terminate()
+  })
   it('fails its workers when a running host dies', async () => {
     const children: ReturnType<typeof threadUtilityProcess>[] = []
     fork.mockImplementation(() => {

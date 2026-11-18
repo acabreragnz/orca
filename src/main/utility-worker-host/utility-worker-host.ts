@@ -60,7 +60,7 @@ export class UtilityWorkerHost {
     private readonly serviceName: string,
     private readonly entryPath: () => string,
     private readonly spawnInProcess: (spawn: UtilityWorkerSpawn) => Worker,
-    /** The owner's account of what this host's workers were doing, for the exit breadcrumb. */
+    /** The owner's account of what this host's workers were doing, for exit and failure breadcrumbs. */
     private readonly exitContext?: (
       workers: readonly HostedWorkerThread[]
     ) => CrashReportBreadcrumbData
@@ -154,6 +154,18 @@ export class UtilityWorkerHost {
     if (!worker.heard && !worker.terminating && event.type !== 'message') {
       this.giveUp(host, 'worker-start-failed')
       return
+    }
+    if (event.type === 'error' && !quitting) {
+      // A worker's own OOM leaves this host running, so no exit breadcrumb would name its work.
+      recordDurableCrashBreadcrumb('worker_thread_failed', {
+        serviceName: this.serviceName,
+        code: event.error.code ?? null,
+        lastReply: worker.lastReplyType,
+        receivedMB: Math.round(worker.receivedBytes / 2 ** 20),
+        ...utilityWorkerHeapData(host.heap, [worker]),
+        // Before the worker fails, which ends what its owner was waiting on.
+        ...this.exitContext?.([worker])
+      })
     }
     if (event.type === 'exit') {
       host.workers.delete(event.id)
