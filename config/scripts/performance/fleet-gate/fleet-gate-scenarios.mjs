@@ -289,6 +289,20 @@ async function switchWorkspaces({ page, windowMs }) {
   if (pair.length < 2) {
     return { note: 'fewer than two visible workspace cards', undriven: 'no two clickable cards' }
   }
+  if (process.env.FLEET_GATE_KEYS) {
+    await page.evaluate(() => {
+      const log = (globalThis.__fgKeys = { pubs: 0, keys: {}, stacks: {} })
+      window.__store.subscribe((next, prev) => {
+        log.pubs += 1
+        const changed = Object.keys(next).filter((k) => !Object.is(next[k], prev[k]))
+        const sig = changed.length ? changed.sort().join(',') : '(none)'
+        log.keys[sig] = (log.keys[sig] ?? 0) + 1
+        const stack = (new Error().stack ?? '').split('\n').slice(2, 14).map((l) => l.trim().replace(/\(?(file|https?):\/\/[^)]*\/(assets|out)\//, '(')).join(' | ')
+        const key = `${sig} :: ${stack}`
+        log.stacks[key] = (log.stacks[key] ?? 0) + 1
+      })
+    })
+  }
   const started = Date.now()
   const deadline = started + windowMs
   let switches = 0
@@ -351,6 +365,10 @@ async function switchWorkspaces({ page, windowMs }) {
     switches += 1
     // One click per tick, so a slow click doesn't shrink the workload unnoticed.
     await sleep(Math.max(0, started + switches * SWITCH_INTERVAL_MS - Date.now()))
+  }
+  if (process.env.FLEET_GATE_KEYS) {
+    const keys = await page.evaluate(() => globalThis.__fgKeys)
+    console.log(`[fleet-gate-keys] switches=${switches} ${JSON.stringify(keys)}`)
   }
   const planned = Math.floor(windowMs / SWITCH_INTERVAL_MS)
   const landedCount = switches - missed
